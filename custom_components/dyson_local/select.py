@@ -3,26 +3,24 @@
 import logging
 from typing import Callable
 
-from .vendor.libdyson import (
-    DysonPureCool,
-    DysonPureCoolLink,
-    DysonPureHotCoolLink,
-    DysonPurifierHumidifyCool,
-    HumidifyOscillationMode,
-    Tilt,
-    WaterHardness,
-    DysonBigQuiet,
-)
-from .vendor.libdyson.const import AirQualityTarget
-
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
-from . import DysonEntity
 from .const import DATA_DEVICES, DOMAIN
+from .entity import DysonEntity
+from .vendor.libdyson import (
+    DysonBigQuiet,
+    DysonPureCool,
+    DysonPureCoolLink,
+    DysonPureHotCoolLink,
+    DysonPurifierHumidifyCool,
+    HumidifyOscillationMode,
+    WaterHardness,
+)
+from .vendor.libdyson.const import AirQualityTarget
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,10 +43,10 @@ OSCILLATION_RANGE_OPTIONS = ["off", "45", "90", "180", "350", "custom"]
 OSCILLATION_RANGE_DISPLAY_NAMES = {
     "off": "Off",
     "45°": "45°",
-    "90°": "90°", 
+    "90°": "90°",
     "180°": "180°",
     "350°": "350°",
-    "custom": "Custom"
+    "custom": "Custom",
 }
 
 OSCILLATION_MODE_ENUM_TO_STR = {
@@ -69,9 +67,7 @@ TILT_ENUM_TO_STR = {
     359: "Breeze",
 }
 
-TILT_STR_TO_ENUM = {
-    value: key for key, value in TILT_ENUM_TO_STR.items()
-}
+TILT_STR_TO_ENUM = {value: key for key, value in TILT_ENUM_TO_STR.items()}
 
 
 WATER_HARDNESS_STR_TO_ENUM = {
@@ -114,20 +110,20 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class DysonAirQualitySelect(DysonEntity, SelectEntity):
+class DysonAirQualitySelect(DysonEntity, SelectEntity):  # type: ignore[misc]
     """Air quality target for supported models."""
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_options = list(AIR_QUALITY_TARGET_STR_TO_ENUM.keys())
 
     @property
-    def current_option(self) -> str:
+    def current_option(self) -> str:  # type: ignore[override]
         """Return the current selected option."""
-        return AIR_QUALITY_TARGET_ENUM_TO_STR[self._device.air_quality_target]
+        return AIR_QUALITY_TARGET_ENUM_TO_STR[self._device.air_quality_target]  # type: ignore[attr-defined]
 
     def select_option(self, option: str) -> None:
         """Configure the new selected option."""
-        self._device.set_air_quality_target(AIR_QUALITY_TARGET_STR_TO_ENUM[option])
+        self._device.set_air_quality_target(AIR_QUALITY_TARGET_STR_TO_ENUM[option])  # type: ignore[attr-defined]
 
     @property
     def sub_name(self) -> str:
@@ -140,7 +136,7 @@ class DysonAirQualitySelect(DysonEntity, SelectEntity):
         return "air_quality"
 
 
-class DysonOscillationModeSelect(DysonEntity, SelectEntity):
+class DysonOscillationModeSelect(DysonEntity, SelectEntity):  # type: ignore[misc]
     """Oscillation mode for supported models."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -148,13 +144,13 @@ class DysonOscillationModeSelect(DysonEntity, SelectEntity):
     _attr_options = list(OSCILLATION_MODE_STR_TO_ENUM.keys())
 
     @property
-    def current_option(self) -> str:
+    def current_option(self) -> str:  # type: ignore[override]
         """Return the current selected option."""
-        return OSCILLATION_MODE_ENUM_TO_STR[self._device.oscillation_mode]
+        return OSCILLATION_MODE_ENUM_TO_STR[self._device.oscillation_mode]  # type: ignore[attr-defined]
 
     def select_option(self, option: str) -> None:
         """Configure the new selected option."""
-        self._device.enable_oscillation(OSCILLATION_MODE_STR_TO_ENUM[option])
+        self._device.enable_oscillation(OSCILLATION_MODE_STR_TO_ENUM[option])  # type: ignore[attr-defined]
 
     @property
     def sub_name(self) -> str:
@@ -167,7 +163,7 @@ class DysonOscillationModeSelect(DysonEntity, SelectEntity):
         return "oscillation_mode"
 
 
-class DysonTiltSelect(DysonEntity, SelectEntity):
+class DysonTiltSelect(DysonEntity, SelectEntity):  # type: ignore[misc]
     """Tilt for supported models."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -175,13 +171,13 @@ class DysonTiltSelect(DysonEntity, SelectEntity):
     _attr_options = list(TILT_STR_TO_ENUM.keys())
 
     @property
-    def current_option(self) -> str:
+    def current_option(self) -> str:  # type: ignore[override]
         """Return the current selected option."""
-        return TILT_ENUM_TO_STR[self._device.tilt]
+        return TILT_ENUM_TO_STR[self._device.tilt]  # type: ignore[attr-defined]
 
     def select_option(self, option: str) -> None:
         """Configure the new selected option."""
-        self._device.set_tilt(TILT_STR_TO_ENUM[option])
+        self._device.set_tilt(TILT_STR_TO_ENUM[option])  # type: ignore[attr-defined]
 
     @property
     def sub_name(self) -> str:
@@ -194,7 +190,7 @@ class DysonTiltSelect(DysonEntity, SelectEntity):
         return "tilt"
 
 
-class DysonWaterHardnessSelect(DysonEntity, SelectEntity):
+class DysonWaterHardnessSelect(DysonEntity, SelectEntity):  # type: ignore[misc]
     """Dyson Pure Humidify+Cool Water Hardness Select."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -202,13 +198,13 @@ class DysonWaterHardnessSelect(DysonEntity, SelectEntity):
     _attr_options = list(WATER_HARDNESS_STR_TO_ENUM.keys())
 
     @property
-    def current_option(self) -> str:
+    def current_option(self) -> str:  # type: ignore[override]
         """Configure the new selected option."""
-        return WATER_HARDNESS_ENUM_TO_STR[self._device.water_hardness]
+        return WATER_HARDNESS_ENUM_TO_STR[self._device.water_hardness]  # type: ignore[attr-defined]
 
     def select_option(self, option: str) -> None:
         """Configure the new selected option."""
-        self._device.set_water_hardness(WATER_HARDNESS_STR_TO_ENUM[option])
+        self._device.set_water_hardness(WATER_HARDNESS_STR_TO_ENUM[option])  # type: ignore[attr-defined]
 
     @property
     def sub_name(self) -> str:
@@ -221,11 +217,11 @@ class DysonWaterHardnessSelect(DysonEntity, SelectEntity):
         return "water_hardness"
 
 
-class DysonOscillationRangeSelect(DysonEntity, SelectEntity):
+class DysonOscillationRangeSelect(DysonEntity, SelectEntity):  # type: ignore[misc]
     """Oscillation range select for supported models."""
 
     _attr_options = OSCILLATION_RANGE_OPTIONS
-    
+
     def __init__(self, device, name: str):
         """Initialize the select entity."""
         super().__init__(device, name)
@@ -233,25 +229,29 @@ class DysonOscillationRangeSelect(DysonEntity, SelectEntity):
         self._user_preferred_center = None
 
     @property
-    def options(self) -> list[str]:
+    def options(self) -> list[str]:  # type: ignore[override]
         """Return the list of available options."""
         return self._attr_options
 
     @property
-    def current_option(self) -> str:
+    def current_option(self) -> str:  # type: ignore[override]
         """Return the current selected option."""
-        if not self._device.oscillation:
+        if not self._device.oscillation:  # type: ignore[attr-defined]
             return "off"
 
         # Calculate the difference between high and low angles
-        low_angle = self._device.oscillation_angle_low
-        high_angle = self._device.oscillation_angle_high
+        low_angle = self._device.oscillation_angle_low  # type: ignore[attr-defined]
+        high_angle = self._device.oscillation_angle_high  # type: ignore[attr-defined]
 
         # Dyson hardware only supports high >= low (no wrap-around)
         if high_angle < low_angle:
-            _LOGGER.warning("Invalid oscillation state: high angle (%d) < low angle (%d)", high_angle, low_angle)
+            _LOGGER.warning(
+                "Invalid oscillation state: high angle (%d) < low angle (%d)",
+                high_angle,
+                low_angle,
+            )
             return "custom"  # Return custom for invalid states
-        
+
         angle_diff = high_angle - low_angle
         current_center = (low_angle + high_angle) / 2
 
@@ -275,7 +275,7 @@ class DysonOscillationRangeSelect(DysonEntity, SelectEntity):
         """Select an option."""
         if option == "off":
             # Turn off oscillation
-            await self.hass.async_add_executor_job(self._device.disable_oscillation)
+            await self.hass.async_add_executor_job(self._device.disable_oscillation)  # type: ignore[attr-defined]
         else:
             # Turn on oscillation with the selected range
             # For 350, always use full range. For others, preserve user's preferred center
@@ -284,21 +284,29 @@ class DysonOscillationRangeSelect(DysonEntity, SelectEntity):
                 new_low = 5
                 new_high = 355
                 await self.hass.async_add_executor_job(
-                    self._device.enable_oscillation, new_low, new_high
+                    self._device.enable_oscillation, new_low, new_high  # type: ignore[attr-defined]
                 )
-                _LOGGER.debug("Set oscillation to maximum range: %d° to %d° (350° range)", new_low, new_high)
-                
+                _LOGGER.debug(
+                    "Set oscillation to maximum range: %d° to %d° (350° range)",
+                    new_low,
+                    new_high,
+                )
+
                 return
-            
+
             # For non-350° ranges, use preferred center or current center
             if self._user_preferred_center is not None:
                 # Use the user's preferred center from previous non-350° selections
                 target_center = self._user_preferred_center
                 _LOGGER.debug("Using stored preferred center: %.1f°", target_center)
-            elif self._device.oscillation and hasattr(self._device, 'oscillation_angle_low') and hasattr(self._device, 'oscillation_angle_high'):
+            elif (
+                self._device.oscillation  # type: ignore[attr-defined]
+                and hasattr(self._device, "oscillation_angle_low")
+                and hasattr(self._device, "oscillation_angle_high")
+            ):
                 # Calculate current center point
-                current_low = self._device.oscillation_angle_low
-                current_high = self._device.oscillation_angle_high
+                current_low = self._device.oscillation_angle_low  # type: ignore[attr-defined]
+                current_high = self._device.oscillation_angle_high  # type: ignore[attr-defined]
                 if current_high >= current_low:
                     target_center = (current_low + current_high) / 2
                     # Store this as preferred center if it's not from a 350° range
@@ -312,7 +320,7 @@ class DysonOscillationRangeSelect(DysonEntity, SelectEntity):
                 # No current oscillation, use default center (front)
                 target_center = 180
                 self._user_preferred_center = target_center
-            
+
             # Calculate new low and high angles based on desired range and current center
             if option == "45":
                 range_degrees = 45
@@ -326,10 +334,14 @@ class DysonOscillationRangeSelect(DysonEntity, SelectEntity):
                 new_low = 5
                 new_high = 355
                 await self.hass.async_add_executor_job(
-                    self._device.enable_oscillation, new_low, new_high
+                    self._device.enable_oscillation, new_low, new_high  # type: ignore[attr-defined]
                 )
-                _LOGGER.debug("Set oscillation to maximum range: %d° to %d° (350° range)", new_low, new_high)
-                
+                _LOGGER.debug(
+                    "Set oscillation to maximum range: %d° to %d° (350° range)",
+                    new_low,
+                    new_high,
+                )
+
                 return
             elif option == "custom":
                 # Don't change angles for custom - user should use number entities
@@ -341,41 +353,51 @@ class DysonOscillationRangeSelect(DysonEntity, SelectEntity):
             half_range = range_degrees / 2
             new_low_raw = target_center - half_range
             new_high_raw = target_center + half_range
-            
+
             # Apply constraints to keep angles within 5-355 degrees
             new_low = max(5, min(355, int(new_low_raw)))
             new_high = max(5, min(355, int(new_high_raw)))
-            
+
             # Ensure high >= low (no wrap-around allowed)
             if new_high < new_low:
-                _LOGGER.warning("Cannot set range - would result in invalid oscillation range (high < low)")
+                _LOGGER.warning(
+                    "Cannot set range - would result in invalid oscillation range (high < low)"
+                )
                 # Fall back to default center if target center causes issues
                 fallback_center = 180
                 new_low_raw = fallback_center - half_range
                 new_high_raw = fallback_center + half_range
                 new_low = max(5, min(355, int(new_low_raw)))
                 new_high = max(5, min(355, int(new_high_raw)))
-                
+
                 if new_high < new_low:
                     _LOGGER.error("Cannot set range - even with fallback center")
                     return
                 else:
                     # Update preferred center to the fallback that worked
                     self._user_preferred_center = fallback_center
-            
+
             # Validate that the resulting range is acceptable
             calculated_range = new_high - new_low
-            if calculated_range < range_degrees - 10:  # Allow some tolerance for constraints
+            if (
+                calculated_range < range_degrees - 10
+            ):  # Allow some tolerance for constraints
                 _LOGGER.warning(
                     "Range adjustment limited by angle constraints (requested %d°, got %d°)",
-                    range_degrees, calculated_range
+                    range_degrees,
+                    calculated_range,
                 )
-            
+
             await self.hass.async_add_executor_job(
-                self._device.enable_oscillation, new_low, new_high
+                self._device.enable_oscillation, new_low, new_high  # type: ignore[attr-defined]
             )
-            _LOGGER.debug("Set oscillation range to %d° centered at %.1f° (range: %d° to %d°)", 
-                         range_degrees, target_center, new_low, new_high)
+            _LOGGER.debug(
+                "Set oscillation range to %d° centered at %.1f° (range: %d° to %d°)",
+                range_degrees,
+                target_center,
+                new_low,
+                new_high,
+            )
 
     @property
     def sub_name(self) -> str:
@@ -388,16 +410,16 @@ class DysonOscillationRangeSelect(DysonEntity, SelectEntity):
         return "oscillation_range"
 
     @property
-    def translation_key(self) -> str:
+    def translation_key(self) -> str:  # type: ignore[override]
         """Return the translation key for this entity."""
         return "oscillation_range"
 
     @property
-    def available(self) -> bool:
+    def available(self) -> bool:  # type: ignore[override]
         """Return True if entity is available."""
-        return super().available and hasattr(self._device, 'oscillation_angle_low')
+        return super().available and hasattr(self._device, "oscillation_angle_low")
 
     @property
-    def icon(self) -> str:
+    def icon(self) -> str:  # type: ignore[override]
         """Return the icon to use in the frontend."""
         return "mdi:rotate-orbit"

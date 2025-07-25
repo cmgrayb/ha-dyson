@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  homeassistant:
+    container_name: homeassistant-dev
+    image: ghcr.io/home-assistant/home-assistant:dev
+    volumes:
+      - ../config:/config
+      - ../custom_components:/config/custom_components
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+    environment:
+      - PYTHONPATH=/config/custom_components
+
+  vscode:
+    container_name: ha-dyson-dev
+    image: ghcr.io/home-assistant/devcontainer:dev
+    volumes:
+      - ..:/workspaces/ha-dyson
+      - vscode-server-extensions:/home/vscode/.vscode-server/extensions
+      - vscode-server-insiders-extensions:/home/vscode/.vscode-server-insiders/extensions
+    command: sleep infinity
+    working_dir: /workspaces/ha-dyson
+    user: vscode
+
+volumes:
+  vscode-server-extensions:
+  vscode-server-insiders-extensions:

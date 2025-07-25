@@ -2,30 +2,25 @@
 
 from typing import Any, Callable, List, Mapping
 
-from .vendor.libdyson import (
-    Dyson360Eye,
-    Dyson360VisNav,
-    VacuumEyePowerMode,
-    VacuumHeuristPowerMode,
-    VacuumVisNavPowerMode,
-    VacuumState,
-)
-
 from homeassistant.components.vacuum import (
     ATTR_STATUS,
-    STATE_CLEANING,
-    STATE_DOCKED,
-    STATE_ERROR,
-    STATE_RETURNING,
-    VacuumEntityFeature,
     StateVacuumEntity,
+    VacuumEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, STATE_PAUSED
 from homeassistant.core import HomeAssistant
 
-from . import DysonEntity
 from .const import DATA_DEVICES, DOMAIN
+from .entity import DysonEntity
+from .vendor.libdyson import (
+    Dyson360Eye,
+    Dyson360VisNav,
+    VacuumEyePowerMode,
+    VacuumHeuristPowerMode,
+    VacuumState,
+    VacuumVisNavPowerMode,
+)
 
 SUPPORTED_FEATURES = (
     VacuumEntityFeature.START
@@ -70,43 +65,41 @@ DYSON_STATUS = {
     VacuumState.MAPPING_NEEDS_CHARGE: "Mapping - Needs charging",
     VacuumState.MAPPING_PAUSED: "Mapping - Paused",
     VacuumState.MAPPING_RUNNING: "Mapping - Running",
-    VacuumState.MACHINE_OFF: "Off",
 }
 
 DYSON_STATES = {
-    VacuumState.FAULT_CALL_HELPLINE: STATE_ERROR,
-    VacuumState.FAULT_CONTACT_HELPLINE: STATE_ERROR,
-    VacuumState.FAULT_CRITICAL: STATE_ERROR,
-    VacuumState.FAULT_GETTING_INFO: STATE_ERROR,
-    VacuumState.FAULT_LOST: STATE_ERROR,
-    VacuumState.FAULT_ON_DOCK: STATE_ERROR,
-    VacuumState.FAULT_ON_DOCK_CHARGED: STATE_ERROR,
-    VacuumState.FAULT_ON_DOCK_CHARGING: STATE_ERROR,
-    VacuumState.FAULT_REPLACE_ON_DOCK: STATE_ERROR,
-    VacuumState.FAULT_RETURN_TO_DOCK: STATE_ERROR,
-    VacuumState.FAULT_RUNNING_DIAGNOSTIC: STATE_ERROR,
-    VacuumState.FAULT_USER_RECOVERABLE: STATE_ERROR,
-    VacuumState.FULL_CLEAN_ABANDONED: STATE_RETURNING,
-    VacuumState.FULL_CLEAN_ABORTED: STATE_RETURNING,
-    VacuumState.FULL_CLEAN_CHARGING: STATE_DOCKED,
-    VacuumState.FULL_CLEAN_DISCOVERING: STATE_CLEANING,
-    VacuumState.FULL_CLEAN_FINISHED: STATE_DOCKED,
-    VacuumState.FULL_CLEAN_INITIATED: STATE_CLEANING,
-    VacuumState.FULL_CLEAN_NEEDS_CHARGE: STATE_RETURNING,
+    VacuumState.FAULT_CALL_HELPLINE: "error",
+    VacuumState.FAULT_CONTACT_HELPLINE: "error",
+    VacuumState.FAULT_CRITICAL: "error",
+    VacuumState.FAULT_GETTING_INFO: "error",
+    VacuumState.FAULT_LOST: "error",
+    VacuumState.FAULT_ON_DOCK: "error",
+    VacuumState.FAULT_ON_DOCK_CHARGED: "error",
+    VacuumState.FAULT_ON_DOCK_CHARGING: "error",
+    VacuumState.FAULT_REPLACE_ON_DOCK: "error",
+    VacuumState.FAULT_RETURN_TO_DOCK: "error",
+    VacuumState.FAULT_RUNNING_DIAGNOSTIC: "error",
+    VacuumState.FAULT_USER_RECOVERABLE: "error",
+    VacuumState.FULL_CLEAN_ABANDONED: "returning",
+    VacuumState.FULL_CLEAN_ABORTED: "returning",
+    VacuumState.FULL_CLEAN_CHARGING: "docked",
+    VacuumState.FULL_CLEAN_DISCOVERING: "cleaning",
+    VacuumState.FULL_CLEAN_FINISHED: "docked",
+    VacuumState.FULL_CLEAN_INITIATED: "cleaning",
+    VacuumState.FULL_CLEAN_NEEDS_CHARGE: "returning",
     VacuumState.FULL_CLEAN_PAUSED: STATE_PAUSED,
-    VacuumState.FULL_CLEAN_RUNNING: STATE_CLEANING,
-    VacuumState.FULL_CLEAN_TRAVERSING: STATE_CLEANING,
-    VacuumState.INACTIVE_CHARGED: STATE_DOCKED,
-    VacuumState.INACTIVE_CHARGING: STATE_DOCKED,
-    VacuumState.INACTIVE_DISCHARGING: STATE_DOCKED,
-    VacuumState.MAPPING_ABORTED: STATE_RETURNING,
+    VacuumState.FULL_CLEAN_RUNNING: "cleaning",
+    VacuumState.FULL_CLEAN_TRAVERSING: "cleaning",
+    VacuumState.INACTIVE_CHARGED: "docked",
+    VacuumState.INACTIVE_CHARGING: "docked",
+    VacuumState.INACTIVE_DISCHARGING: "docked",
+    VacuumState.MAPPING_ABORTED: "returning",
     VacuumState.MAPPING_CHARGING: STATE_PAUSED,
-    VacuumState.MAPPING_FINISHED: STATE_CLEANING,
-    VacuumState.MAPPING_INITIATED: STATE_CLEANING,
-    VacuumState.MAPPING_NEEDS_CHARGE: STATE_RETURNING,
+    VacuumState.MAPPING_FINISHED: "cleaning",
+    VacuumState.MAPPING_INITIATED: "cleaning",
+    VacuumState.MAPPING_NEEDS_CHARGE: "returning",
     VacuumState.MAPPING_PAUSED: STATE_PAUSED,
-    VacuumState.MAPPING_RUNNING: STATE_CLEANING,
-    VacuumState.MACHINE_OFF: STATE_DOCKED,
+    VacuumState.MAPPING_RUNNING: "cleaning",
 }
 
 EYE_POWER_MODE_ENUM_TO_STR = {
@@ -152,114 +145,114 @@ async def async_setup_entry(
     async_add_entities([entity])
 
 
-class DysonVacuumEntity(DysonEntity, StateVacuumEntity):
+class DysonVacuumEntity(DysonEntity, StateVacuumEntity):  # type: ignore[misc]
     """Dyson vacuum entity base class."""
 
     @property
-    def state(self) -> str:
+    def state(self) -> str:  # type: ignore[override]
         """Return the state of the vacuum."""
-        return DYSON_STATES[self._device.state]
+        return DYSON_STATES[self._device.state]  # type: ignore[attr-defined]
 
     @property
     def status(self) -> str:
         """Return the status of the vacuum."""
-        return DYSON_STATUS[self._device.state]
+        return DYSON_STATUS[self._device.state]  # type: ignore[attr-defined]
 
     @property
-    def battery_level(self) -> int:
+    def battery_level(self) -> int:  # type: ignore[override]
         """Return the battery level of the vacuum cleaner."""
-        return self._device.battery_level
+        return self._device.battery_level  # type: ignore[attr-defined]
 
     @property
-    def available(self) -> bool:
+    def available(self) -> bool:  # type: ignore[override]
         """Return True if entity is available."""
         return self._device.is_connected
 
     @property
-    def supported_features(self) -> int:
+    def supported_features(self) -> int:  # type: ignore[override]
         """Flag vacuum cleaner robot features that are supported."""
         return SUPPORTED_FEATURES
 
     @property
-    def extra_state_attributes(self) -> Mapping[str, Any]:
+    def extra_state_attributes(self) -> Mapping[str, Any]:  # type: ignore[override]
         """Expose the status to state attributes."""
         return {
-            ATTR_POSITION: str(self._device.position),
+            ATTR_POSITION: str(self._device.position),  # type: ignore[attr-defined]
             ATTR_STATUS: self.status,
         }
 
     def pause(self) -> None:
         """Pause the device."""
-        self._device.pause()
+        self._device.pause()  # type: ignore[attr-defined]
 
     def return_to_base(self, **kwargs) -> None:
         """Return the device to base."""
-        self._device.abort()
+        self._device.abort()  # type: ignore[attr-defined]
 
 
 class Dyson360EyeEntity(DysonVacuumEntity):
     """Dyson 360 Eye robot vacuum entity."""
 
     @property
-    def fan_speed(self) -> str:
+    def fan_speed(self) -> str:  # type: ignore[override]
         """Return the fan speed of the vacuum cleaner."""
-        return EYE_POWER_MODE_ENUM_TO_STR[self._device.power_mode]
+        return EYE_POWER_MODE_ENUM_TO_STR[self._device.power_mode]  # type: ignore[attr-defined]
 
     @property
-    def fan_speed_list(self) -> List[str]:
+    def fan_speed_list(self) -> List[str]:  # type: ignore[override]
         """Get the list of available fan speed steps of the vacuum cleaner."""
         return list(EYE_POWER_MODE_STR_TO_ENUM.keys())
 
     def start(self) -> None:
         """Start the device."""
         if self.state == STATE_PAUSED:
-            self._device.resume()
+            self._device.resume()  # type: ignore[attr-defined]
         else:
-            self._device.start()
+            self._device.start()  # type: ignore[attr-defined]
 
     def set_fan_speed(self, fan_speed: str, **kwargs) -> None:
         """Set fan speed."""
-        self._device.set_power_mode(EYE_POWER_MODE_STR_TO_ENUM[fan_speed])
+        self._device.set_power_mode(EYE_POWER_MODE_STR_TO_ENUM[fan_speed])  # type: ignore[attr-defined]
 
 
 class Dyson360HeuristEntity(DysonVacuumEntity):
     """Dyson 360 Heurist robot vacuum entity."""
 
     @property
-    def fan_speed(self) -> str:
+    def fan_speed(self) -> str:  # type: ignore[override]
         """Return the fan speed of the vacuum cleaner."""
-        return HEURIST_POWER_MODE_ENUM_TO_STR[self._device.current_power_mode]
+        return HEURIST_POWER_MODE_ENUM_TO_STR[self._device.current_power_mode]  # type: ignore[attr-defined]
 
     @property
-    def fan_speed_list(self) -> List[str]:
+    def fan_speed_list(self) -> List[str]:  # type: ignore[override]
         """Get the list of available fan speed steps of the vacuum cleaner."""
         return list(HEURIST_POWER_MODE_STR_TO_ENUM.keys())
 
     def start(self) -> None:
         """Start the device."""
         if self.state == STATE_PAUSED:
-            self._device.resume()
+            self._device.resume()  # type: ignore[attr-defined]
         else:
-            self._device.start_all_zones()
+            self._device.start_all_zones()  # type: ignore[attr-defined]
 
     def set_fan_speed(self, fan_speed: str, **kwargs) -> None:
         """Set fan speed."""
-        self._device.set_default_power_mode(HEURIST_POWER_MODE_STR_TO_ENUM[fan_speed])
+        self._device.set_default_power_mode(HEURIST_POWER_MODE_STR_TO_ENUM[fan_speed])  # type: ignore[attr-defined]
 
 
 class Dyson360VisNavEntity(Dyson360HeuristEntity):
     """Dyson 360 Vis Nav robot vacuum entity."""
 
     @property
-    def fan_speed(self) -> str:
+    def fan_speed(self) -> str:  # type: ignore[override]
         """Return the fan speed of the vacuum cleaner."""
-        return VIS_NAV_POWER_MODE_ENUM_TO_STR[self._device.current_power_mode]
+        return VIS_NAV_POWER_MODE_ENUM_TO_STR[self._device.current_power_mode]  # type: ignore[attr-defined]
 
     @property
-    def fan_speed_list(self) -> List[str]:
+    def fan_speed_list(self) -> List[str]:  # type: ignore[override]
         """Get the list of available fan speed steps of the vacuum cleaner."""
         return list(VIS_NAV_POWER_MODE_STR_TO_ENUM.keys())
 
     def set_fan_speed(self, fan_speed: str, **kwargs) -> None:
         """Set fan speed."""
-        self._device.set_default_power_mode(VIS_NAV_POWER_MODE_STR_TO_ENUM[fan_speed])
+        self._device.set_default_power_mode(VIS_NAV_POWER_MODE_STR_TO_ENUM[fan_speed])  # type: ignore[attr-defined]
