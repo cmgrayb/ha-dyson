@@ -2,17 +2,25 @@
 
 import logging
 import threading
-from typing import Optional, cast
+from typing import Callable, Optional, cast
 
 import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.const import CONF_EMAIL, CONF_HOST, CONF_NAME, CONF_PASSWORD
+from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
 
 from .cloud.const import CONF_AUTH, CONF_REGION
-from .const import CONF_CREDENTIAL, CONF_DEVICE_TYPE, CONF_SERIAL, DOMAIN
+from .const import (
+    CONF_AUTO_DISCOVERY,
+    CONF_CREDENTIAL,
+    CONF_DEVICE_TYPE,
+    CONF_SERIAL,
+    DEFAULT_AUTO_DISCOVERY,
+    DOMAIN,
+)
 from .vendor.libdyson import DEVICE_TYPE_NAMES, get_device, get_mqtt_info_from_wifi_info
 from .vendor.libdyson.cloud import (
     REGIONS,
@@ -147,9 +155,19 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_PUSH
 
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return DysonOptionsFlowHandler(config_entry)
+
     def __init__(self):
         """Initialize the config flow."""
         self._device_info: Optional[DysonDeviceInfo] = None
+        self._reauth_entry: Optional[config_entries.ConfigEntry] = None
+        self._email: str = ""
+        self._region: str = ""
+        self._verify: Optional[Callable] = None
 
     async def async_step_user(self, user_input: Optional[dict] = None):
         """Handle step initialized by user."""
@@ -282,6 +300,11 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_REGION: self._region,
                         CONF_AUTH: auth_info,
                     },
+                    options={
+                        CONF_AUTO_DISCOVERY: info.get(
+                            CONF_AUTO_DISCOVERY, DEFAULT_AUTO_DISCOVERY
+                        ),
+                    },
                 )
 
         return self.async_show_form(
@@ -290,6 +313,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_PASSWORD): str,
                     vol.Required(CONF_OTP): str,
+                    vol.Optional(
+                        CONF_AUTO_DISCOVERY, default=DEFAULT_AUTO_DISCOVERY
+                    ): bool,
                 }
             ),
             errors=errors,
@@ -339,6 +365,11 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_REGION: self._region,
                         CONF_AUTH: auth_info,
                     },
+                    options={
+                        CONF_AUTO_DISCOVERY: info.get(
+                            CONF_AUTO_DISCOVERY, DEFAULT_AUTO_DISCOVERY
+                        ),
+                    },
                 )
 
         return self.async_show_form(
@@ -346,6 +377,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_OTP): str,
+                    vol.Optional(
+                        CONF_AUTO_DISCOVERY, default=DEFAULT_AUTO_DISCOVERY
+                    ): bool,
                 }
             ),
             errors=errors,
@@ -628,6 +662,199 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.error("  5. Device already has too many connections")
 
             raise CannotConnect
+
+    async def async_step_reauth(self, data: Optional[dict] = None):
+        """Handle reauthentication flow when cloud credentials are invalid."""
+        entry_id = self.context.get("entry_id")
+        if not entry_id:
+            _LOGGER.error("No entry_id found in reauth context")
+            return self.async_abort(reason="reauth_failed")
+
+        _LOGGER.debug("Starting reauthentication flow for entry: %s", entry_id)
+
+        # Store the entry_id for later use
+        self._reauth_entry = self.hass.config_entries.async_get_entry(entry_id)
+
+        if self._reauth_entry is None:
+            _LOGGER.error("Could not find config entry for reauthentication")
+            return self.async_abort(reason="reauth_failed")
+
+        # Check if this was a cloud-based setup that needs reauthentication
+        if CONF_AUTH in self._reauth_entry.data:
+            return await self.async_step_reauth_cloud()
+        else:
+            # For local-only setups, there's no cloud auth to refresh
+            _LOGGER.warning("Reauth requested for local-only setup - nothing to do")
+            return self.async_abort(reason="reauth_not_needed")
+
+    async def async_step_reauth_cloud(self, user_input: Optional[dict] = None):
+        """Handle cloud reauthentication - collect email and start OTP flow."""
+        errors = {}
+
+        if user_input is not None:
+            try:
+                # Store email and region for OTP verification
+                self._email = user_input[CONF_EMAIL]
+                self._region = self._reauth_entry.data.get(CONF_REGION, "US")  # type: ignore[union-attr]
+
+                if self._region == "CN":
+                    account = DysonAccountCN()
+                else:
+                    account = DysonAccount()
+
+                # Start OTP flow
+                self._verify = await self.hass.async_add_executor_job(
+                    account.login_email_otp, self._email, self._region
+                )
+
+                return await self.async_step_reauth_otp()
+
+            except DysonInvalidAuth:
+                errors["base"] = "invalid_auth"
+            except DysonNetworkError:
+                errors["base"] = "cannot_connect"
+            except Exception as err:
+                _LOGGER.error("Unexpected error during reauthentication setup: %s", err)
+                errors["base"] = "unknown"
+
+        # Show the form to enter email
+        return self.async_show_form(
+            step_id="reauth_cloud",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_EMAIL, default=""): str,
+                }
+            ),
+            errors=errors,
+            description_placeholders={
+                "name": self._reauth_entry.data.get(CONF_NAME, "Dyson Device") if self._reauth_entry else "Dyson Device",  # type: ignore[union-attr]
+            },
+        )
+
+    async def async_step_reauth_otp(self, user_input: Optional[dict] = None):
+        """Handle OTP verification for reauthentication."""
+        errors = {}
+
+        if user_input is not None:
+            try:
+                # Verify OTP and get new auth info
+                auth_info = await self.hass.async_add_executor_job(
+                    self._verify, user_input[CONF_OTP], user_input[CONF_PASSWORD]  # type: ignore[misc]
+                )
+
+                # Update the config entry with new auth info
+                if self._reauth_entry:
+                    new_data = {**self._reauth_entry.data}
+                    new_data[CONF_AUTH] = auth_info
+
+                    self.hass.config_entries.async_update_entry(
+                        self._reauth_entry,
+                        data=new_data,
+                    )
+
+                    _LOGGER.info(
+                        "Successfully updated cloud credentials for entry: %s",
+                        self._reauth_entry.entry_id,
+                    )
+                    return self.async_abort(reason="reauth_successful")
+                else:
+                    return self.async_abort(reason="reauth_failed")
+
+            except DysonLoginFailure:
+                errors["base"] = "invalid_auth"
+            except DysonInvalidAuth:
+                errors["base"] = "invalid_auth"
+            except Exception as err:
+                _LOGGER.error("Unexpected error during OTP verification: %s", err)
+                errors["base"] = "unknown"
+
+        # Show OTP form
+        return self.async_show_form(
+            step_id="reauth_otp",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_OTP): str,
+                    vol.Required(CONF_PASSWORD): str,
+                }
+            ),
+            errors=errors,
+            description_placeholders={
+                "email": self._email,
+            },
+        )
+
+
+class DysonOptionsFlowHandler(config_entries.OptionsFlow):
+    """Dyson options flow handler."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input=None):
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        # Show options for both cloud and local devices
+        if CONF_AUTH in self.config_entry.data:
+            # Cloud-configured device with full options
+            from .const import (
+                CONF_CLOUD_POLL_INTERVAL,
+                CONF_ENABLE_POLLING,
+                DEFAULT_CLOUD_POLL_INTERVAL,
+                DEFAULT_ENABLE_POLLING,
+            )
+
+            current_interval = self.config_entry.options.get(
+                CONF_CLOUD_POLL_INTERVAL, DEFAULT_CLOUD_POLL_INTERVAL
+            )
+            current_auto_discovery = self.config_entry.options.get(
+                CONF_AUTO_DISCOVERY, DEFAULT_AUTO_DISCOVERY
+            )
+            current_enable_polling = self.config_entry.options.get(
+                CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
+            )
+
+            return self.async_show_form(
+                step_id="init",
+                data_schema=vol.Schema(
+                    {
+                        vol.Optional(
+                            CONF_AUTO_DISCOVERY, default=current_auto_discovery
+                        ): bool,
+                        vol.Optional(
+                            CONF_ENABLE_POLLING, default=current_enable_polling
+                        ): bool,
+                        vol.Optional(
+                            CONF_CLOUD_POLL_INTERVAL, default=current_interval
+                        ): vol.All(
+                            vol.Coerce(int), vol.Range(min=300, max=86400)
+                        ),  # 5 min to 24 hours
+                    }
+                ),
+                description_placeholders={
+                    "current_interval": str(current_interval // 60),  # Show in minutes
+                },
+            )
+        else:
+            # Local-only device with basic options
+            from .const import CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
+
+            current_enable_polling = self.config_entry.options.get(
+                CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
+            )
+
+            return self.async_show_form(
+                step_id="init",
+                data_schema=vol.Schema(
+                    {
+                        vol.Optional(
+                            CONF_ENABLE_POLLING, default=current_enable_polling
+                        ): bool,
+                    }
+                ),
+            )
 
 
 class CannotConnect(HomeAssistantError):
