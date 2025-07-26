@@ -43,7 +43,8 @@
       "email_otp": {
         "data": {
           "otp": "MyDyson verification code (Check your email)",
-          "password": "Password"
+          "password": "Password",
+          "auto_discovery": "Enable automatic discovery of new devices"
         }
       },
       "mobile": {
@@ -53,7 +54,8 @@
       },
       "mobile_otp": {
         "data": {
-          "otp": "MyDyson verification code (Check your mobile phone)"
+          "otp": "MyDyson verification code (Check your mobile phone)",
+          "auto_discovery": "Enable automatic discovery of new devices"
         }
       }
     },
@@ -70,6 +72,18 @@
     },
     "abort": {
       "already_configured": "Device already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "auto_discovery": "Enable newly added entities",
+          "enable_polling": "Enable polling for changes",
+          "cloud_poll_interval": "Cloud polling interval (seconds)"
+        },
+        "description": "Configure auto-discovery and polling settings. The current polling interval is {current_interval} minutes."
+      }
     }
   },
   "entity": {

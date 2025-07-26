@@ -109,6 +109,7 @@ def _get_current_oscillation_state(self) -> dict:
 - ✅ **Pre-commit Hooks**: Use pre-commit for automated quality checks
 - ✅ **HACS Validation**: Pass HACS and hassfest validation
 - ✅ **Device Testing**: Test with real devices when possible
+- ✅ **Vendor Exclusions**: Exclude third-party vendor code from linting with proper setup.cfg configuration
 
 ## 🏗️ Architecture Standards
 
@@ -236,3 +237,221 @@ Use this checklist to verify compliance:
 3. **Testing**: Manual testing with real devices
 4. **Documentation**: Update relevant documentation
 5. **Backward Compatibility**: Ensure no breaking changes
+
+## 🔐 Authentication & Authorization Patterns
+
+### Cloud Authentication
+
+- ✅ **OAuth2 Flow**: Implement proper OAuth2 authorization code flow
+- ✅ **Token Management**: Secure storage and refresh of access/refresh tokens
+- ✅ **Error Handling**: Graceful handling of authentication failures with user-friendly messages
+- ✅ **Reauthentication**: Automatic token refresh and manual reauth flows
+- ✅ **Timeout Handling**: Proper handling of network timeouts and connection errors
+
+### Authentication Error Recovery
+
+```python
+# ✅ Proper authentication error handling pattern
+try:
+    cloud_devices = await cloud_manager.get_devices()
+except DysonAuthRequired:
+    # Trigger config flow for reauthentication
+    self.hass.async_create_task(
+        self.hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": config_entries.SOURCE_REAUTH},
+            data=self.config_entry.data,
+        )
+    )
+    return
+except Exception as ex:
+    _LOGGER.error("Unexpected error during cloud authentication: %s", ex)
+    return
+```
+
+### Local Device Authentication
+
+- ✅ **Credential Validation**: Validate device credentials before attempting connection
+- ✅ **Connection Retry**: Implement exponential backoff for failed authentication attempts
+- ✅ **Device State**: Maintain authentication state across reconnections
+- ✅ **Security**: Never log or expose device credentials in plain text
+
+## 🔍 Auto-Discovery & Configuration Patterns
+
+### Discovery Manager Design
+
+- ✅ **Singleton Pattern**: Use coordinator pattern for discovery management
+- ✅ **Device Deduplication**: Prevent duplicate device entries across local/cloud discovery
+- ✅ **Background Discovery**: Non-blocking discovery that doesn't delay integration startup
+- ✅ **Discovery Coordination**: Coordinate between local mDNS and cloud API discovery
+
+### Configuration Flow Architecture
+
+```python
+# ✅ Proper config flow with cloud and local discovery
+class DysonConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    async def async_step_user(self, user_input=None):
+        """Handle user initiated flow."""
+        # Present discovery options (cloud, local, manual)
+
+    async def async_step_cloud(self, user_input=None):
+        """Handle cloud authentication step."""
+        # OAuth2 flow with proper error handling
+
+    async def async_step_discovery(self, discovery_info):
+        """Handle discovered devices."""
+        # Auto-configure discovered devices
+
+    async def async_step_reauth(self, user_input=None):
+        """Handle reauthentication."""
+        # Seamless token refresh flow
+```
+
+### Options Flow Implementation
+
+- ✅ **Runtime Configuration**: Allow users to modify settings without reconfiguration
+- ✅ **Validation**: Validate all option changes before applying
+- ✅ **Persistence**: Properly save and load option configurations
+- ✅ **Backward Compatibility**: Handle missing options gracefully
+- ✅ **User-Friendly Labels**: Use clear, descriptive labels that match industry standards (e.g., Philips Hue patterns)
+- ✅ **Conditional Options**: Show relevant options based on device type (cloud vs local)
+
+```python
+# ✅ Proper options flow pattern with conditional options
+async def async_step_init(self, user_input=None):
+    """Manage the options."""
+    if user_input is not None:
+        # Validate and save options
+        return self.async_create_entry(title="", data=user_input)
+
+    # Show different options based on device configuration
+    if CONF_AUTH in self.config_entry.data:
+        # Cloud device - full options
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema({
+                vol.Optional(CONF_AUTO_DISCOVERY, default=current_auto_discovery): bool,
+                vol.Optional(CONF_ENABLE_POLLING, default=current_enable_polling): bool,
+                vol.Optional(CONF_CLOUD_POLL_INTERVAL, default=current_interval): vol.All(
+                    vol.Coerce(int), vol.Range(min=300, max=86400)
+                ),
+            })
+        )
+    else:
+        # Local device - basic options
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema({
+                vol.Optional(CONF_ENABLE_POLLING, default=current_enable_polling): bool,
+            })
+        )
+```
+
+## 🏗️ Advanced Integration Architecture
+
+### Device Manager Patterns
+
+- ✅ **Lifecycle Management**: Proper device setup, update, and cleanup lifecycle
+- ✅ **Error Recovery**: Graceful handling of device connection failures
+- ✅ **Cloud Coordination**: Seamless integration of cloud and local device management
+- ✅ **Resource Cleanup**: Proper cleanup of device connections and resources
+
+### Coordinator Implementation
+
+```python
+# ✅ Proper coordinator pattern for device management
+class DysonDeviceUpdateCoordinator(DataUpdateCoordinator):
+    def __init__(self, hass, device, update_interval):
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=f"Dyson {device.name}",
+            update_interval=timedelta(seconds=update_interval),
+        )
+        self.device = device
+
+    async def _async_update_data(self):
+        """Fetch data from device."""
+        try:
+            async with asyncio.timeout(10):
+                await self.device.request_current_state()
+                return self.device.environmental_data
+        except Exception as ex:
+            raise UpdateFailed(f"Error communicating with device: {ex}")
+```
+
+## 🔧 Advanced Linting & Quality Control
+
+### Setup.cfg Configuration
+
+```ini
+# ✅ Comprehensive flake8 configuration
+[flake8]
+max-line-length = 88
+exclude =
+    .venv,
+    .git,
+    .tox,
+    docs,
+    venv,
+    bin,
+    lib,
+    deps,
+    build,
+    custom_components/dyson_local/vendor
+ignore =
+    E203,  # Whitespace before ':' (conflicts with black)
+    W503,  # Line break before binary operator (conflicts with black)
+per-file-ignores =
+    __init__.py:F401  # Allow unused imports in __init__.py
+```
+
+### Import Management
+
+- ✅ **Systematic Cleanup**: Regular review and removal of unused imports
+- ✅ **Import Organization**: Use isort for consistent import ordering
+- ✅ **Conditional Imports**: Proper handling of optional dependencies
+- ✅ **Vendor Dependencies**: Isolate vendor imports to prevent namespace pollution
+
+### Professional Repository Standards
+
+- ✅ **Demo Script Management**: Remove debug/demo scripts from public repositories
+- ✅ **Test Organization**: Proper separation of unit tests, integration tests, and demo scripts
+- ✅ **Documentation**: Comprehensive README with setup, configuration, and troubleshooting
+- ✅ **Version Control**: Proper .gitignore and exclusion of development artifacts
+
+### Quality Gate Automation
+
+```python
+# ✅ Pre-commit hook configuration
+repos:
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [flake8-docstrings]
+```
+
+## 🚀 Performance & Scalability
+
+### Connection Management
+
+- ✅ **Connection Pooling**: Reuse connections where possible
+- ✅ **Timeout Configuration**: Appropriate timeouts for all network operations
+- ✅ **Resource Limits**: Proper limits on concurrent connections and operations
+- ✅ **Memory Management**: Efficient memory usage and garbage collection
+
+### Data Flow Optimization
+
+- ✅ **Batch Operations**: Group related API calls to reduce overhead
+- ✅ **Caching Strategy**: Intelligent caching of device state and configuration
+- ✅ **Update Intervals**: Configurable update intervals based on device capabilities
+- ✅ **Event-Driven Updates**: Use device events rather than polling where possible
