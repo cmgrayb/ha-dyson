@@ -11,7 +11,7 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_DEVICES, DOMAIN
@@ -26,7 +26,7 @@ from .vendor.libdyson import (
 ICON_BIN_FULL = "mdi:delete-variant"
 
 
-class DysonBinarySensor(BinarySensorEntity, DysonEntity):  # type: ignore[misc]
+class DysonBinarySensor(BinarySensorEntity, DysonEntity):
     """Base class for Dyson binary sensors."""
 
     def __init__(self, device: Any, name: str) -> None:
@@ -42,7 +42,7 @@ async def async_setup_entry(
     """Set up Dyson binary sensor from a config entry."""
     device = hass.data[DOMAIN][DATA_DEVICES][config_entry.entry_id]
     name = config_entry.data[CONF_NAME]
-    entities = []
+    entities: list[BinarySensorEntity] = []
     if isinstance(device, Dyson360Eye):
         entities.append(DysonVacuumBatteryChargingSensor(device, name))
     if isinstance(device, Dyson360Heurist):

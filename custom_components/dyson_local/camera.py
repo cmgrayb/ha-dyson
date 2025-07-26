@@ -2,11 +2,12 @@
 
 from datetime import timedelta
 import logging
-from typing import Callable
+from typing import Any
 
 from homeassistant.components.camera import Camera
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .cloud.const import DATA_ACCOUNT, DATA_DEVICES
 from .const import DOMAIN
@@ -20,7 +21,9 @@ SCAN_INTERVAL = timedelta(minutes=30)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: Callable
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Dyson fan from a config entry."""
     data = hass.data[DOMAIN][config_entry.entry_id]
@@ -42,12 +45,12 @@ async def async_setup_entry(
 class DysonCleaningMapEntity(Camera):
     """Dyson vacuum cleaning map entity."""
 
-    def __init__(self, device: DysonCloud360Eye, device_info: DysonDeviceInfo):
+    def __init__(self, device: DysonCloud360Eye, device_info: DysonDeviceInfo) -> None:
         super().__init__()
         self._device = device
         self._device_info = device_info
-        self._last_cleaning_task = None
-        self._image = None
+        self._last_cleaning_task: Any = None
+        self._image: bytes | None = None
 
         # Set attributes instead of properties to avoid override issues
         self._attr_name = f"{self._device_info.name} Cleaning Map"
@@ -61,11 +64,13 @@ class DysonCleaningMapEntity(Camera):
             "sw_version": self._device_info.version,
         }
 
-    def camera_image(self, width=None, height=None):
+    def camera_image(
+        self, width: int | None = None, height: int | None = None
+    ) -> bytes | None:
         """Return cleaning map. Width and height are ignored."""
         return self._image
 
-    def update(self):
+    def update(self) -> None:
         """Check for map update."""
         _LOGGER.debug("Running cleaning map update for %s", self._device_info.name)
         cleaning_tasks = self._device.get_cleaning_history()

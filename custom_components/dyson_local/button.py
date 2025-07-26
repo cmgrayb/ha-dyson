@@ -5,7 +5,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from .const import DATA_DEVICES, DOMAIN
 from .entity import DysonEntity
@@ -14,7 +14,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: Callable
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: Callable[..., None],
 ) -> None:
     """Set up Dyson button from a config entry."""
     device = hass.data[DOMAIN][DATA_DEVICES][config_entry.entry_id]
@@ -28,7 +30,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class DysonButton(ButtonEntity, DysonEntity):  # type: ignore[misc]
+class DysonButton(ButtonEntity, DysonEntity):
     """Base class for Dyson button entities."""
 
     _attr_entity_category = EntityCategory.CONFIG

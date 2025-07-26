@@ -15,7 +15,7 @@ from .entity import DysonEntity
 _LOGGER = logging.getLogger(__name__)
 
 # Track when status was last requested for each device to avoid duplicate requests
-_last_status_request = {}
+_last_status_request: dict[str, float] = {}
 
 
 async def async_setup_entry(

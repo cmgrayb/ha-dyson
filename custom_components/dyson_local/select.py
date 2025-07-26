@@ -7,7 +7,7 @@ from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from .const import DATA_DEVICES, DOMAIN
 from .entity import DysonEntity
@@ -82,12 +82,14 @@ WATER_HARDNESS_ENUM_TO_STR = {
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: Callable
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: Callable[..., None],
 ) -> None:
     """Set up Dyson sensor from a config entry."""
     device = hass.data[DOMAIN][DATA_DEVICES][config_entry.entry_id]
     name = config_entry.data[CONF_NAME]
-    entities = []
+    entities: list[SelectEntity] = []
     if isinstance(device, DysonPureHotCoolLink) or isinstance(
         device, DysonPureCoolLink
     ):
@@ -131,7 +133,7 @@ class DysonAirQualitySelect(DysonEntity, SelectEntity):  # type: ignore[misc]
         return "Air Quality"
 
     @property
-    def sub_unique_id(self):
+    def sub_unique_id(self) -> str:
         """Return the select's unique id."""
         return "air_quality"
 
