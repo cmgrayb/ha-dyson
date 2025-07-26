@@ -129,4 +129,3 @@ async def async_check_auth_and_refresh_devices(
     except Exception as e:
         _LOGGER.error("Unexpected error checking cloud credentials: %s", str(e))
         return False
-        return False
