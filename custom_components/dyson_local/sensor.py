@@ -2,6 +2,17 @@
 
 from typing import Callable, Optional
 
+from libdyson import (
+    Dyson360Eye,
+    Dyson360Heurist,
+    Dyson360VisNav,
+    DysonBigQuiet,
+    DysonDevice,
+    DysonPureCoolLink,
+    DysonPurifierHumidifyCool,
+)
+from libdyson.const import MessageType
+
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -26,16 +37,6 @@ from homeassistant.helpers.update_coordinator import (
 
 from .const import DATA_COORDINATORS, DATA_DEVICES, DOMAIN
 from .entity import DysonEntity
-from .vendor.libdyson import (
-    Dyson360Eye,
-    Dyson360Heurist,
-    Dyson360VisNav,
-    DysonBigQuiet,
-    DysonDevice,
-    DysonPureCoolLink,
-    DysonPurifierHumidifyCool,
-)
-from .vendor.libdyson.const import MessageType
 
 
 async def async_setup_entry(
@@ -172,7 +173,7 @@ class DysonCarbonFilterLifeSensor(DysonSensor):
     _attr_native_unit_of_measurement = PERCENTAGE
 
     @property
-    def native_value(self) -> int:  # type: ignore[override]
+    def native_value(self) -> int:
         """Return the state of the sensor."""
         return self._device.carbon_filter_life  # type: ignore[attr-defined, no-any-return]
 
@@ -202,7 +203,7 @@ class DysonCombinedFilterLifeSensor(DysonSensor):
     _attr_native_unit_of_measurement = PERCENTAGE
 
     @property
-    def native_value(self) -> int:  # type: ignore[override]
+    def native_value(self) -> int:
         """Return the state of the sensor."""
         return self._device.hepa_filter_life  # type: ignore[attr-defined]
 
@@ -426,4 +427,4 @@ class DysonCarbonDioxideSensor(DysonSensorEnvironmental):
     @property
     def available(self) -> bool:
         """Return available only if device not in off, init or failed states."""
-        return isinstance(self._device.carbon_dioxide, (int, float))  # type: ignore[attr-defined]  # type: ignore[attr-defined]
+        return isinstance(self._device.carbon_dioxide, (int, float))  # type: ignore[attr-defined]

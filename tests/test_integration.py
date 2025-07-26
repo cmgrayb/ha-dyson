@@ -104,9 +104,7 @@ class TestDysonLocalIntegration:
     ):
         """Test setup failure when device connection fails."""
         # Mock the device.connect to raise an exception to simulate connection failure
-        from custom_components.dyson_local.vendor.libdyson.exceptions import (
-            DysonException,
-        )
+        from libdyson.exceptions import DysonException
 
         mock_device.connect = Mock(side_effect=DysonException("Connection failed"))
 

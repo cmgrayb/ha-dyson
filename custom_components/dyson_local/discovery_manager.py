@@ -5,6 +5,9 @@ from functools import partial
 import logging
 from typing import Optional
 
+from libdyson.discovery import DysonDiscovery
+from libdyson.dyson_device import DysonDevice
+
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
@@ -13,8 +16,6 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .connection import DysonConnectionHandler
 from .const import DATA_DEVICES, DATA_DISCOVERY, DOMAIN
-from .vendor.libdyson.discovery import DysonDiscovery
-from .vendor.libdyson.dyson_device import DysonDevice
 
 _LOGGER = logging.getLogger(__name__)
 

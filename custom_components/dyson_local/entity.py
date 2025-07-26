@@ -4,11 +4,12 @@ import logging
 import time
 from typing import Any, Optional
 
+from libdyson import MessageType
+from libdyson.dyson_device import DysonDevice
+
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
-from .vendor.libdyson import MessageType
-from .vendor.libdyson.dyson_device import DysonDevice
 
 _LOGGER = logging.getLogger(__name__)
 

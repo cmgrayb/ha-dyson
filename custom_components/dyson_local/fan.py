@@ -4,6 +4,7 @@ import logging
 import math
 from typing import Any, Mapping
 
+from libdyson import DysonPureCool, DysonPureCoolLink, MessageType
 import voluptuous as vol
 
 from homeassistant.components.fan import (
@@ -27,7 +28,6 @@ from homeassistant.util.percentage import (
 
 from .const import DATA_DEVICES, DOMAIN
 from .entity import DysonEntity
-from .vendor.libdyson import DysonPureCool, DysonPureCoolLink, MessageType
 
 _LOGGER = logging.getLogger(__name__)
 
