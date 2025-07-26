@@ -2,7 +2,7 @@
 
 import logging
 import time
-from typing import Optional
+from typing import Any, Optional
 
 from homeassistant.helpers.entity import Entity
 
@@ -13,8 +13,8 @@ from .vendor.libdyson.dyson_device import DysonDevice
 _LOGGER = logging.getLogger(__name__)
 
 # Global tracking for oscillation updates to prevent infinite loops
-_oscillation_update_locks = {}
-_oscillation_update_timestamps = {}
+_oscillation_update_locks: dict[str, bool] = {}
+_oscillation_update_timestamps: dict[str, float] = {}
 
 
 class DysonEntity(Entity):
@@ -26,7 +26,9 @@ class DysonEntity(Entity):
         """Initialize the entity."""
         self._device = device
         self._name = name
-        self._last_oscillation_state = None  # Track the last known oscillation state
+        self._last_oscillation_state: Optional[
+            dict[str, Any]
+        ] = None  # Track the last known oscillation state
 
         # Set attributes to avoid property override issues
         self._attr_should_poll = False
@@ -159,7 +161,7 @@ class DysonEntity(Entity):
                 "Error checking oscillation state change in %s: %s", self.unique_id, e
             )
 
-    def _get_current_oscillation_state(self) -> dict:
+    def _get_current_oscillation_state(self) -> dict[str, Any]:
         """Get the current oscillation state for comparison."""
         # Return relevant oscillation state that should trigger sync when changed
         if hasattr(self._device, "oscillation_angle_low"):
@@ -172,7 +174,7 @@ class DysonEntity(Entity):
         return {}
 
     @property
-    def name(self) -> str:  # type: ignore[override]
+    def name(self) -> str:
         """Return the name of the entity."""
         if self.sub_name is None:
             return self._name
@@ -184,7 +186,7 @@ class DysonEntity(Entity):
         return None
 
     @property
-    def unique_id(self) -> str:  # type: ignore[override]
+    def unique_id(self) -> str:
         """Return the entity unique id."""
         if self.sub_unique_id is None:
             return self._device.serial
@@ -196,11 +198,11 @@ class DysonEntity(Entity):
         return None
 
     @property
-    def device_info(self) -> dict:  # type: ignore[override]
+    def device_info(self) -> dict[str, Any]:  # type: ignore[override]
         """Return device info of the entity."""
         return {
             "identifiers": {(DOMAIN, self._device.serial)},
-            "name": self._name,
+            "name": self._device.name,
             "manufacturer": "Dyson",
             "model": self._device.device_type,
         }

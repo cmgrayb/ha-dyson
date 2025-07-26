@@ -32,6 +32,9 @@ class TestDysonLocalIntegration:
         entry.data = {
             CONF_HOST: "192.168.1.100",
             CONF_NAME: "Test Dyson Device",
+            "serial": "ABC-DEF-123",
+            "credential": "test_credential",
+            "device_type": "520",
         }
         entry.options = {}
         return entry
@@ -129,7 +132,8 @@ class TestDysonLocalIntegration:
         expected_unique_id = f"{mock_device.serial}-test_sensor"
         assert entity.unique_id == expected_unique_id
 
-    def test_callback_management(self, mock_device):
+    @pytest.mark.asyncio
+    async def test_callback_management(self, mock_device):
         """Test that entities properly manage device callbacks."""
         from custom_components.dyson_local.entity import DysonEntity
 
@@ -137,13 +141,13 @@ class TestDysonLocalIntegration:
 
         # Simulate adding to hass
         entity._device._callbacks = []
-        entity.async_added_to_hass()
+        await entity.async_added_to_hass()
 
         # Verify callback was added
         mock_device.add_message_listener.assert_called()
 
         # Simulate removal from hass
-        entity.async_will_remove_from_hass()
+        await entity.async_will_remove_from_hass()
 
         # Verify callback was removed
         mock_device.remove_message_listener.assert_called()
@@ -151,11 +155,11 @@ class TestDysonLocalIntegration:
     def test_platform_coexistence(self, mock_device):
         """Test that multiple platform entities can coexist."""
         from custom_components.dyson_local.fan import DysonFanEntity
-        from custom_components.dyson_local.sensor import DysonSensorEntity
+        from custom_components.dyson_local.sensor import DysonBatterySensor
 
         # Create entities from different platforms
         fan_entity = DysonFanEntity(mock_device, "Test Fan")
-        sensor_entity = DysonSensorEntity(mock_device, "Test Sensor")
+        sensor_entity = DysonBatterySensor(mock_device, "Test Sensor")
 
         # Both should have unique identifiers
         assert fan_entity.unique_id != sensor_entity.unique_id

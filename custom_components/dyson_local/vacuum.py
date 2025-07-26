@@ -1,6 +1,6 @@
 """Vacuum platform for Dyson."""
 
-from typing import Any, Callable, List, Mapping
+from typing import Any, Mapping
 
 from homeassistant.components.vacuum import (
     ATTR_STATUS,
@@ -10,10 +10,11 @@ from homeassistant.components.vacuum import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, STATE_PAUSED
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_DEVICES, DOMAIN
 from .entity import DysonEntity
-from .vendor.libdyson import (
+from .vendor.libdyson import (  # type: ignore[attr-defined]
     Dyson360Eye,
     Dyson360VisNav,
     VacuumEyePowerMode,
@@ -131,11 +132,14 @@ ATTR_POSITION = "position"
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: Callable
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Dyson vacuum from a config entry."""
     device = hass.data[DOMAIN][DATA_DEVICES][config_entry.entry_id]
     name = config_entry.data[CONF_NAME]
+    entity: DysonVacuumEntity
     if isinstance(device, Dyson360Eye):
         entity = Dyson360EyeEntity(device, name)
     elif isinstance(device, Dyson360VisNav):  # Dyson360VisNav
@@ -145,13 +149,8 @@ async def async_setup_entry(
     async_add_entities([entity])
 
 
-class DysonVacuumEntity(DysonEntity, StateVacuumEntity):  # type: ignore[misc]
+class DysonVacuumEntity(DysonEntity, StateVacuumEntity):
     """Dyson vacuum entity base class."""
-
-    @property
-    def state(self) -> str:  # type: ignore[override]
-        """Return the state of the vacuum."""
-        return DYSON_STATES[self._device.state]  # type: ignore[attr-defined]
 
     @property
     def status(self) -> str:
@@ -159,22 +158,22 @@ class DysonVacuumEntity(DysonEntity, StateVacuumEntity):  # type: ignore[misc]
         return DYSON_STATUS[self._device.state]  # type: ignore[attr-defined]
 
     @property
-    def battery_level(self) -> int:  # type: ignore[override]
+    def battery_level(self) -> int:
         """Return the battery level of the vacuum cleaner."""
-        return self._device.battery_level  # type: ignore[attr-defined]
+        return self._device.battery_level  # type: ignore[attr-defined, no-any-return]
 
     @property
-    def available(self) -> bool:  # type: ignore[override]
+    def available(self) -> bool:
         """Return True if entity is available."""
         return self._device.is_connected
 
     @property
-    def supported_features(self) -> int:  # type: ignore[override]
+    def supported_features(self) -> VacuumEntityFeature:
         """Flag vacuum cleaner robot features that are supported."""
         return SUPPORTED_FEATURES
 
     @property
-    def extra_state_attributes(self) -> Mapping[str, Any]:  # type: ignore[override]
+    def extra_state_attributes(self) -> Mapping[str, Any]:
         """Expose the status to state attributes."""
         return {
             ATTR_POSITION: str(self._device.position),  # type: ignore[attr-defined]
@@ -185,7 +184,7 @@ class DysonVacuumEntity(DysonEntity, StateVacuumEntity):  # type: ignore[misc]
         """Pause the device."""
         self._device.pause()  # type: ignore[attr-defined]
 
-    def return_to_base(self, **kwargs) -> None:
+    def return_to_base(self, **kwargs: Any) -> None:
         """Return the device to base."""
         self._device.abort()  # type: ignore[attr-defined]
 
@@ -194,12 +193,12 @@ class Dyson360EyeEntity(DysonVacuumEntity):
     """Dyson 360 Eye robot vacuum entity."""
 
     @property
-    def fan_speed(self) -> str:  # type: ignore[override]
+    def fan_speed(self) -> str:
         """Return the fan speed of the vacuum cleaner."""
         return EYE_POWER_MODE_ENUM_TO_STR[self._device.power_mode]  # type: ignore[attr-defined]
 
     @property
-    def fan_speed_list(self) -> List[str]:  # type: ignore[override]
+    def fan_speed_list(self) -> list[str]:
         """Get the list of available fan speed steps of the vacuum cleaner."""
         return list(EYE_POWER_MODE_STR_TO_ENUM.keys())
 
@@ -210,7 +209,7 @@ class Dyson360EyeEntity(DysonVacuumEntity):
         else:
             self._device.start()  # type: ignore[attr-defined]
 
-    def set_fan_speed(self, fan_speed: str, **kwargs) -> None:
+    def set_fan_speed(self, fan_speed: str, **kwargs: Any) -> None:
         """Set fan speed."""
         self._device.set_power_mode(EYE_POWER_MODE_STR_TO_ENUM[fan_speed])  # type: ignore[attr-defined]
 
@@ -219,12 +218,12 @@ class Dyson360HeuristEntity(DysonVacuumEntity):
     """Dyson 360 Heurist robot vacuum entity."""
 
     @property
-    def fan_speed(self) -> str:  # type: ignore[override]
+    def fan_speed(self) -> str:
         """Return the fan speed of the vacuum cleaner."""
         return HEURIST_POWER_MODE_ENUM_TO_STR[self._device.current_power_mode]  # type: ignore[attr-defined]
 
     @property
-    def fan_speed_list(self) -> List[str]:  # type: ignore[override]
+    def fan_speed_list(self) -> list[str]:
         """Get the list of available fan speed steps of the vacuum cleaner."""
         return list(HEURIST_POWER_MODE_STR_TO_ENUM.keys())
 
@@ -235,7 +234,7 @@ class Dyson360HeuristEntity(DysonVacuumEntity):
         else:
             self._device.start_all_zones()  # type: ignore[attr-defined]
 
-    def set_fan_speed(self, fan_speed: str, **kwargs) -> None:
+    def set_fan_speed(self, fan_speed: str, **kwargs: Any) -> None:
         """Set fan speed."""
         self._device.set_default_power_mode(HEURIST_POWER_MODE_STR_TO_ENUM[fan_speed])  # type: ignore[attr-defined]
 
@@ -244,15 +243,15 @@ class Dyson360VisNavEntity(Dyson360HeuristEntity):
     """Dyson 360 Vis Nav robot vacuum entity."""
 
     @property
-    def fan_speed(self) -> str:  # type: ignore[override]
+    def fan_speed(self) -> str:
         """Return the fan speed of the vacuum cleaner."""
         return VIS_NAV_POWER_MODE_ENUM_TO_STR[self._device.current_power_mode]  # type: ignore[attr-defined]
 
     @property
-    def fan_speed_list(self) -> List[str]:  # type: ignore[override]
+    def fan_speed_list(self) -> list[str]:
         """Get the list of available fan speed steps of the vacuum cleaner."""
         return list(VIS_NAV_POWER_MODE_STR_TO_ENUM.keys())
 
-    def set_fan_speed(self, fan_speed: str, **kwargs) -> None:
+    def set_fan_speed(self, fan_speed: str, **kwargs: Any) -> None:
         """Set fan speed."""
         self._device.set_default_power_mode(VIS_NAV_POWER_MODE_STR_TO_ENUM[fan_speed])  # type: ignore[attr-defined]

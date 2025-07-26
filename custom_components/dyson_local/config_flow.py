@@ -2,14 +2,16 @@
 
 import logging
 import threading
-from typing import Callable, Optional, cast
+from typing import Any, Callable, Optional, cast
 
 import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.components.zeroconf import async_get_instance
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import CONF_EMAIL, CONF_HOST, CONF_NAME, CONF_PASSWORD
 from homeassistant.core import callback
+from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 
 from .cloud.const import CONF_AUTH, CONF_REGION
@@ -157,19 +159,23 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> config_entries.OptionsFlow:
         """Get the options flow for this handler."""
         return DysonOptionsFlowHandler(config_entry)
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the config flow."""
         self._device_info: Optional[DysonDeviceInfo] = None
         self._reauth_entry: Optional[config_entries.ConfigEntry] = None
         self._email: str = ""
         self._region: str = ""
-        self._verify: Optional[Callable] = None
+        self._verify: Optional[Callable[..., Any]] = None
 
-    async def async_step_user(self, user_input: Optional[dict] = None):
+    async def async_step_user(
+        self, user_input: Optional[dict[str, Any]] = None
+    ) -> ConfigFlowResult:
         """Handle step initialized by user."""
         if user_input is not None:
             if user_input[CONF_METHOD] == "wifi":
@@ -183,7 +189,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({vol.Required(CONF_METHOD): vol.In(SETUP_METHODS)}),
         )
 
-    async def async_step_wifi(self, info: Optional[dict] = None):
+    async def async_step_wifi(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> ConfigFlowResult:
         """Handle step to set up using device Wi-Fi information."""
         errors = {}
         if info is not None:
@@ -234,7 +242,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_cloud(self, info: Optional[dict] = None):
+    async def async_step_cloud(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         if info is not None:
             self._region = info[CONF_REGION]
             if self._region == "CN":
@@ -247,7 +257,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({vol.Required(CONF_REGION): vol.In(region_names)}),
         )
 
-    async def async_step_email(self, info: Optional[dict] = None):
+    async def async_step_email(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         errors = {}
         if info is not None:
             email = info[CONF_EMAIL]
@@ -284,7 +296,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_email_otp(self, info: Optional[dict] = None):
+    async def async_step_email_otp(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         errors = {}
         if info is not None:
             try:
@@ -321,7 +335,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_mobile(self, info: Optional[dict] = None):
+    async def async_step_mobile(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         errors = {}
         if info is not None:
             account = DysonAccountCN()
@@ -349,7 +365,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_mobile_otp(self, info: Optional[dict] = None):
+    async def async_step_mobile_otp(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         errors = {}
         if info is not None:
             try:
@@ -385,7 +403,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_manual(self, info: Optional[dict] = None):
+    async def async_step_manual(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         """Handle step to setup manually."""
         errors = {}
         if info is not None:
@@ -436,7 +456,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_host(self, info: Optional[dict] = None):
+    async def async_step_host(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         """Handle step to set host."""
         errors = {}
         if info is not None:
@@ -796,9 +818,9 @@ class DysonOptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        # Show options for both cloud and local devices
+        # Check if this is a cloud-configured device
         if CONF_AUTH in self.config_entry.data:
-            # Cloud-configured device with full options
+            # Cloud device - show full options with interval description
             from .const import (
                 CONF_CLOUD_POLL_INTERVAL,
                 CONF_ENABLE_POLLING,
@@ -838,23 +860,30 @@ class DysonOptionsFlowHandler(config_entries.OptionsFlow):
                 },
             )
         else:
-            # Local-only device with basic options
-            from .const import CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
+            # Local device - use separate step without interval variable
+            return await self.async_step_local_options(user_input)
 
-            current_enable_polling = self.config_entry.options.get(
-                CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
-            )
+    async def async_step_local_options(self, user_input=None):
+        """Manage local device options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
 
-            return self.async_show_form(
-                step_id="init",
-                data_schema=vol.Schema(
-                    {
-                        vol.Optional(
-                            CONF_ENABLE_POLLING, default=current_enable_polling
-                        ): bool,
-                    }
-                ),
-            )
+        from .const import CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
+
+        current_enable_polling = self.config_entry.options.get(
+            CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
+        )
+
+        return self.async_show_form(
+            step_id="local_options",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_ENABLE_POLLING, default=current_enable_polling
+                    ): bool,
+                }
+            ),
+        )
 
 
 class CannotConnect(HomeAssistantError):
