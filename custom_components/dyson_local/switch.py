@@ -2,6 +2,8 @@
 
 from typing import Any, Callable
 
+from libdyson import DysonPureHotCoolLink
+
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
@@ -10,7 +12,6 @@ from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-def
 
 from .const import DATA_DEVICES, DOMAIN
 from .entity import DysonEntity
-from .vendor.libdyson import DysonPureHotCoolLink
 
 
 async def async_setup_entry(

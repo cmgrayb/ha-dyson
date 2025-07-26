@@ -2,6 +2,8 @@
 
 from typing import Any
 
+from libdyson import MessageType  # type: ignore[attr-defined]
+
 from homeassistant.components.humidifier import (  # type: ignore[attr-defined]
     HumidifierDeviceClass,
     HumidifierEntity,
@@ -15,7 +17,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_DEVICES, DOMAIN
 from .entity import DysonEntity
-from .vendor.libdyson import MessageType  # type: ignore[attr-defined]
 
 AVAILABLE_MODES = [MODE_NORMAL, MODE_AUTO]
 

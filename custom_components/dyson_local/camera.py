@@ -4,6 +4,10 @@ from datetime import timedelta
 import logging
 from typing import Any
 
+from libdyson.cloud import DysonDeviceInfo
+from libdyson.cloud.cloud_360_eye import DysonCloud360Eye
+from libdyson.const import DEVICE_TYPE_360_EYE
+
 from homeassistant.components.camera import Camera
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -11,9 +15,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .cloud.const import DATA_ACCOUNT, DATA_DEVICES
 from .const import DOMAIN
-from .vendor.libdyson.cloud import DysonDeviceInfo
-from .vendor.libdyson.cloud.cloud_360_eye import DysonCloud360Eye
-from .vendor.libdyson.const import DEVICE_TYPE_360_EYE
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -2,9 +2,7 @@
 
 from typing import Any, List, Optional
 
-from homeassistant.const import STATE_OFF
-
-from .vendor.libdyson import (
+from libdyson import (
     Dyson360Eye,
     Dyson360Heurist,
     Dyson360VisNav,
@@ -12,12 +10,14 @@ from .vendor.libdyson import (
     DysonPureHotCoolLink,
     DysonPurifierHumidifyCool,
 )
-from .vendor.libdyson.const import (
+from libdyson.const import (
     ENVIRONMENTAL_FAIL,
     ENVIRONMENTAL_INIT,
     ENVIRONMENTAL_OFF,
 )
-from .vendor.libdyson.dyson_device import DysonDevice
+from libdyson.dyson_device import DysonDevice
+
+from homeassistant.const import STATE_OFF
 
 STATE_INIT = "init"
 STATE_FAIL = "fail"

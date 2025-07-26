@@ -3,15 +3,7 @@
 import logging
 from typing import Callable
 
-from homeassistant.components.select import SelectEntity
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_NAME
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
-
-from .const import DATA_DEVICES, DOMAIN
-from .entity import DysonEntity
-from .vendor.libdyson import (
+from libdyson import (
     DysonBigQuiet,
     DysonPureCool,
     DysonPureCoolLink,
@@ -20,7 +12,16 @@ from .vendor.libdyson import (
     HumidifyOscillationMode,
     WaterHardness,
 )
-from .vendor.libdyson.const import AirQualityTarget
+from libdyson.const import AirQualityTarget
+
+from homeassistant.components.select import SelectEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_NAME
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
+
+from .const import DATA_DEVICES, DOMAIN
+from .entity import DysonEntity
 
 _LOGGER = logging.getLogger(__name__)
 
