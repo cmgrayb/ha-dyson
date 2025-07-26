@@ -2,16 +2,15 @@
 
 from typing import Callable
 
-from .vendor.libdyson import DysonPureHotCoolLink
-
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
-from . import DysonEntity
 from .const import DATA_DEVICES, DOMAIN
+from .entity import DysonEntity
+from .vendor.libdyson import DysonPureHotCoolLink
 
 
 async def async_setup_entry(
@@ -29,7 +28,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class DysonNightModeSwitchEntity(DysonEntity, SwitchEntity):
+class DysonNightModeSwitchEntity(DysonEntity, SwitchEntity):  # type: ignore[misc]
     """Dyson fan night mode switch."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -45,25 +44,25 @@ class DysonNightModeSwitchEntity(DysonEntity, SwitchEntity):
         return "night_mode"
 
     @property
-    def icon(self):
+    def icon(self):  # type: ignore[override]
         """Return the icon of the entity."""
         return "mdi:power-sleep"
 
     @property
-    def is_on(self):
+    def is_on(self):  # type: ignore[override]
         """Return if night mode is on."""
-        return self._device.night_mode
+        return self._device.night_mode  # type: ignore[attr-defined]
 
-    def turn_on(self):
+    def turn_on(self, **kwargs):
         """Turn on night mode."""
-        return self._device.enable_night_mode()
+        return self._device.enable_night_mode()  # type: ignore[attr-defined]
 
-    def turn_off(self):
+    def turn_off(self, **kwargs):
         """Turn off night mode."""
-        return self._device.disable_night_mode()
+        return self._device.disable_night_mode()  # type: ignore[attr-defined]
 
 
-class DysonContinuousMonitoringSwitchEntity(DysonEntity, SwitchEntity):
+class DysonContinuousMonitoringSwitchEntity(DysonEntity, SwitchEntity):  # type: ignore[misc]
     """Dyson fan continuous monitoring."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -79,25 +78,25 @@ class DysonContinuousMonitoringSwitchEntity(DysonEntity, SwitchEntity):
         return "continuous_monitoring"
 
     @property
-    def icon(self):
+    def icon(self):  # type: ignore[override]
         """Return the icon of the entity."""
         return "mdi:eye" if self.is_on else "mdi:eye-off"
 
     @property
-    def is_on(self):
+    def is_on(self):  # type: ignore[override]
         """Return if continuous monitoring is on."""
-        return self._device.continuous_monitoring
+        return self._device.continuous_monitoring  # type: ignore[attr-defined]
 
-    def turn_on(self):
+    def turn_on(self, **kwargs):
         """Turn on continuous monitoring."""
-        return self._device.enable_continuous_monitoring()
+        return self._device.enable_continuous_monitoring()  # type: ignore[attr-defined]
 
-    def turn_off(self):
+    def turn_off(self, **kwargs):
         """Turn off continuous monitoring."""
-        return self._device.disable_continuous_monitoring()
+        return self._device.disable_continuous_monitoring()  # type: ignore[attr-defined]
 
 
-class DysonFocusModeSwitchEntity(DysonEntity, SwitchEntity):
+class DysonFocusModeSwitchEntity(DysonEntity, SwitchEntity):  # type: ignore[misc]
     """Dyson Pure Hot+Cool Link focus mode switch."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -114,14 +113,14 @@ class DysonFocusModeSwitchEntity(DysonEntity, SwitchEntity):
         return "focus_mode"
 
     @property
-    def is_on(self):
+    def is_on(self):  # type: ignore[override]
         """Return if switch is on."""
-        return self._device.focus_mode
+        return self._device.focus_mode  # type: ignore[attr-defined]
 
-    def turn_on(self):
+    def turn_on(self, **kwargs):
         """Turn on switch."""
-        return self._device.enable_focus_mode()
+        return self._device.enable_focus_mode()  # type: ignore[attr-defined]
 
-    def turn_off(self):
+    def turn_off(self, **kwargs):
         """Turn off switch."""
-        return self._device.disable_focus_mode()
+        return self._device.disable_focus_mode()  # type: ignore[attr-defined]

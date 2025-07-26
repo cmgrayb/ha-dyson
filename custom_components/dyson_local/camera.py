@@ -1,18 +1,18 @@
 """Camera platform for Dyson cloud."""
-from typing import Callable
-import logging
+
 from datetime import timedelta
+import logging
+from typing import Callable
 
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.camera import Camera
-
-from .vendor.libdyson.const import DEVICE_TYPE_360_EYE, DEVICE_TYPE_360_HEURIST
-from .vendor.libdyson.cloud.cloud_360_eye import DysonCloud360Eye
-from .vendor.libdyson.cloud import DysonDeviceInfo
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 
 from .cloud.const import DATA_ACCOUNT, DATA_DEVICES
 from .const import DOMAIN
+from .vendor.libdyson.cloud import DysonDeviceInfo
+from .vendor.libdyson.cloud.cloud_360_eye import DysonCloud360Eye
+from .vendor.libdyson.const import DEVICE_TYPE_360_EYE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,10 +30,12 @@ async def async_setup_entry(
     for device in devices:
         if device.product_type not in [DEVICE_TYPE_360_EYE]:
             continue
-        entities.append(DysonCleaningMapEntity(
-            DysonCloud360Eye(account, device.serial),
-            device,
-        ))
+        entities.append(
+            DysonCleaningMapEntity(
+                DysonCloud360Eye(account, device.serial),
+                device,
+            )
+        )
     async_add_entities(entities, True)
 
 
@@ -47,31 +49,17 @@ class DysonCleaningMapEntity(Camera):
         self._last_cleaning_task = None
         self._image = None
 
-    @property
-    def name(self) -> str:
-        """Return entity name."""
-        return f"{self._device_info.name} Cleaning Map"
-
-    @property
-    def unique_id(self) -> str:
-        """Return entity unique id."""
-        return self._device_info.serial
-
-    @property
-    def device_info(self) -> dict:
-        """Return device info of the entity."""
-        return {
+        # Set attributes instead of properties to avoid override issues
+        self._attr_name = f"{self._device_info.name} Cleaning Map"
+        self._attr_unique_id = self._device_info.serial
+        self._attr_icon = "mdi:map"
+        self._attr_device_info = {
             "identifiers": {(DOMAIN, self._device_info.serial)},
             "name": self._device_info.name,
             "manufacturer": "Dyson",
             "model": self._device_info.product_type,
             "sw_version": self._device_info.version,
         }
-
-    @property
-    def icon(self) -> str:
-        """Return entity icon."""
-        return "mdi:map"
 
     def camera_image(self, width=None, height=None):
         """Return cleaning map. Width and height are ignored."""
