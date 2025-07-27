@@ -5,9 +5,6 @@ from functools import partial
 import logging
 from typing import Optional
 
-from libdyson.dyson_device import DysonDevice
-from libdyson.exceptions import DysonException
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
@@ -16,6 +13,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DATA_COORDINATORS, DATA_DEVICES, DOMAIN
 from .utils import get_platforms_for_device
+from .vendor.libdyson.dyson_device import DysonDevice
+from .vendor.libdyson.exceptions import DysonException
 
 _LOGGER = logging.getLogger(__name__)
 

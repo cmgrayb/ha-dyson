@@ -5,10 +5,6 @@ from datetime import timedelta
 import logging
 from typing import Optional
 
-from libdyson import Dyson360Eye, Dyson360Heurist, Dyson360VisNav, get_device
-from libdyson.dyson_device import DysonDevice
-from libdyson.exceptions import DysonException, DysonInvalidAuth
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
@@ -34,6 +30,9 @@ from .const import (
 )
 from .discovery_manager import DysonDiscoveryManager
 from .utils import get_platforms_for_device
+from .vendor.libdyson import Dyson360Eye, Dyson360Heurist, Dyson360VisNav, get_device
+from .vendor.libdyson.dyson_device import DysonDevice
+from .vendor.libdyson.exceptions import DysonException, DysonInvalidAuth
 
 _LOGGER = logging.getLogger(__name__)
 

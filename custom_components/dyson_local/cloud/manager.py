@@ -2,9 +2,6 @@
 
 import logging
 
-from libdyson.cloud import DysonAccount, DysonAccountCN
-from libdyson.exceptions import DysonInvalidAuth, DysonNetworkError
-
 from homeassistant import config_entries
 from homeassistant.config_entries import SOURCE_DISCOVERY, ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -12,6 +9,8 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 
 from ..cloud.const import CONF_AUTH, CONF_REGION, DATA_ACCOUNT, DATA_DEVICES
 from ..const import DOMAIN
+from ..vendor.libdyson.cloud import DysonAccount, DysonAccountCN
+from ..vendor.libdyson.exceptions import DysonInvalidAuth, DysonNetworkError
 
 _LOGGER = logging.getLogger(__name__)
 
