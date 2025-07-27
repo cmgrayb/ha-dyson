@@ -4,13 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from libdyson import (
-    Dyson360Eye,
-    Dyson360Heurist,
-    Dyson360VisNav,
-    DysonPureHotCoolLink,
-)
-
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -23,6 +16,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_DEVICES, DOMAIN
 from .entity import DysonEntity
+from .vendor.libdyson import (
+    Dyson360Eye,
+    Dyson360Heurist,
+    Dyson360VisNav,
+    DysonPureHotCoolLink,
+)
 
 ICON_BIN_FULL = "mdi:delete-variant"
 

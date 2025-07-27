@@ -4,8 +4,27 @@ import logging
 import threading
 from typing import Any, Callable, Optional, cast
 
-from libdyson import DEVICE_TYPE_NAMES, get_device, get_mqtt_info_from_wifi_info
-from libdyson.cloud import (
+import voluptuous as vol
+
+from homeassistant import config_entries
+from homeassistant.components.zeroconf import async_get_instance
+from homeassistant.config_entries import ConfigFlowResult
+from homeassistant.const import CONF_EMAIL, CONF_HOST, CONF_NAME, CONF_PASSWORD
+from homeassistant.core import callback
+from homeassistant.data_entry_flow import FlowResult
+from homeassistant.exceptions import HomeAssistantError
+
+from .cloud.const import CONF_AUTH, CONF_REGION
+from .const import (
+    CONF_AUTO_DISCOVERY,
+    CONF_CREDENTIAL,
+    CONF_DEVICE_TYPE,
+    CONF_SERIAL,
+    DEFAULT_AUTO_DISCOVERY,
+    DOMAIN,
+)
+from .vendor.libdyson import DEVICE_TYPE_NAMES, get_device, get_mqtt_info_from_wifi_info
+from .vendor.libdyson.cloud import (
     REGIONS,
     DysonAccount,
     DysonAccountCN,
@@ -13,7 +32,7 @@ from libdyson.cloud import (
 )
 
 # Import device type constants for mapping
-from libdyson.const import (
+from .vendor.libdyson.const import (
     DEVICE_TYPE_360_EYE,
     DEVICE_TYPE_360_HEURIST,
     DEVICE_TYPE_360_VIS_NAV,
@@ -33,8 +52,8 @@ from libdyson.const import (
     DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_E,
     DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K,
 )
-from libdyson.discovery import DysonDiscovery
-from libdyson.exceptions import (
+from .vendor.libdyson.discovery import DysonDiscovery
+from .vendor.libdyson.exceptions import (
     DysonException,
     DysonFailedToParseWifiInfo,
     DysonInvalidAccountStatus,
@@ -43,25 +62,6 @@ from libdyson.exceptions import (
     DysonLoginFailure,
     DysonNetworkError,
     DysonOTPTooFrequently,
-)
-import voluptuous as vol
-
-from homeassistant import config_entries
-from homeassistant.components.zeroconf import async_get_instance
-from homeassistant.config_entries import ConfigFlowResult
-from homeassistant.const import CONF_EMAIL, CONF_HOST, CONF_NAME, CONF_PASSWORD
-from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
-from homeassistant.exceptions import HomeAssistantError
-
-from .cloud.const import CONF_AUTH, CONF_REGION
-from .const import (
-    CONF_AUTO_DISCOVERY,
-    CONF_CREDENTIAL,
-    CONF_DEVICE_TYPE,
-    CONF_SERIAL,
-    DEFAULT_AUTO_DISCOVERY,
-    DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)

@@ -3,17 +3,6 @@
 import logging
 from typing import Callable
 
-from libdyson import (
-    DysonBigQuiet,
-    DysonPureCool,
-    DysonPureCoolLink,
-    DysonPureHotCoolLink,
-    DysonPurifierHumidifyCool,
-    HumidifyOscillationMode,
-    WaterHardness,
-)
-from libdyson.const import AirQualityTarget
-
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
@@ -22,6 +11,16 @@ from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-def
 
 from .const import DATA_DEVICES, DOMAIN
 from .entity import DysonEntity
+from .vendor.libdyson import (
+    DysonBigQuiet,
+    DysonPureCool,
+    DysonPureCoolLink,
+    DysonPureHotCoolLink,
+    DysonPurifierHumidifyCool,
+    HumidifyOscillationMode,
+    WaterHardness,
+)
+from .vendor.libdyson.const import AirQualityTarget
 
 _LOGGER = logging.getLogger(__name__)
 

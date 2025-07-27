@@ -2,15 +2,6 @@
 
 from typing import Any, Mapping
 
-from libdyson import (  # type: ignore[attr-defined]
-    Dyson360Eye,
-    Dyson360VisNav,
-    VacuumEyePowerMode,
-    VacuumHeuristPowerMode,
-    VacuumState,
-    VacuumVisNavPowerMode,
-)
-
 from homeassistant.components.vacuum import (
     ATTR_STATUS,
     StateVacuumEntity,
@@ -23,6 +14,14 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_DEVICES, DOMAIN
 from .entity import DysonEntity
+from .vendor.libdyson import (  # type: ignore[attr-defined]
+    Dyson360Eye,
+    Dyson360VisNav,
+    VacuumEyePowerMode,
+    VacuumHeuristPowerMode,
+    VacuumState,
+    VacuumVisNavPowerMode,
+)
 
 SUPPORTED_FEATURES = (
     VacuumEntityFeature.START
@@ -169,7 +168,7 @@ class DysonVacuumEntity(DysonEntity, StateVacuumEntity):
         return self._device.is_connected
 
     @property
-    def supported_features(self) -> int:
+    def supported_features(self) -> VacuumEntityFeature:
         """Flag vacuum cleaner robot features that are supported."""
         return SUPPORTED_FEATURES
 

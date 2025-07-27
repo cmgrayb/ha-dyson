@@ -3,8 +3,6 @@
 import logging
 from typing import Any
 
-from libdyson import DysonPureHotCoolLink  # type: ignore[attr-defined]
-
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     FAN_DIFFUSE,
@@ -21,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DATA_DEVICES, DOMAIN
 from .entity import DysonEntity
 from .utils import environmental_property
+from .vendor.libdyson import DysonPureHotCoolLink  # type: ignore[attr-defined]
 
 _LOGGER = logging.getLogger(__name__)
 
