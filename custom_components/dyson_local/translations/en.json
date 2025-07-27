@@ -83,6 +83,13 @@
           "cloud_poll_interval": "Cloud polling interval (seconds)"
         },
         "description": "Configure auto-discovery and polling settings. The current polling interval is {current_interval} minutes."
+      },
+      "local_options": {
+        "title": "Configure device options",
+        "description": "Configure local device settings",
+        "data": {
+          "enable_polling": "Enable polling for status changes"
+        }
       }
     }
   },
