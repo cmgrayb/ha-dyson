@@ -217,5 +217,3 @@ class TestDysonLocalIntegration:
 
         # Should still call the executor job
         assert entity.hass.async_add_executor_job.called
-        # Should still call the executor job
-        assert entity.hass.async_add_executor_job.called
