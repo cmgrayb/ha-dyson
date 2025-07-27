@@ -17,6 +17,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv, entity_platform
+from homeassistant.helpers.config_validation import make_entity_service_schema
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util.percentage import (
     int_states_in_range,
@@ -37,14 +38,14 @@ ATTR_TIMER = "timer"
 SERVICE_SET_ANGLE = "set_angle"
 SERVICE_SET_TIMER = "set_timer"
 
-SET_ANGLE_SCHEMA = vol.Schema(
+SET_ANGLE_SCHEMA = make_entity_service_schema(
     {
         vol.Required(ATTR_ANGLE_LOW): cv.positive_int,
         vol.Required(ATTR_ANGLE_HIGH): cv.positive_int,
     }
 )
 
-SET_TIMER_SCHEMA = vol.Schema(
+SET_TIMER_SCHEMA = make_entity_service_schema(
     {
         vol.Required(ATTR_TIMER): cv.positive_int,
     }
@@ -109,47 +110,6 @@ class DysonFanEntity(DysonEntity, FanEntity):  # type: ignore[misc]
         # Set attributes to avoid property override issues
         self._attr_supported_features = COMMON_FEATURES
         self._attr_preset_modes = SUPPORTED_PRESET_MODES
-
-    def __getattribute__(self, name: str) -> Any:
-        """Override to log method calls."""
-        attr = super().__getattribute__(name)
-        if (
-            callable(attr)
-            and not name.startswith("_")
-            and name not in ["hass", "entity_id", "name"]
-        ):
-            # Log ALL method calls to see what Home Assistant is trying to call
-            _LOGGER.debug(
-                "Method %s accessed on fan entity %s",
-                name,
-                getattr(self, "entity_id", "unknown"),
-            )
-        elif name in [
-            "oscillating",
-            "current_direction",
-            "angle_low",
-            "angle_high",
-            "percentage",
-            "preset_mode",
-        ]:
-            # Log important property access
-            _LOGGER.debug(
-                "Property %s accessed on fan entity %s",
-                name,
-                getattr(self, "entity_id", "unknown"),
-            )
-        return attr
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        """Log all attribute setting attempts."""
-        if not name.startswith("_"):
-            _LOGGER.debug(
-                "__setattr__ called: Setting %s = %s for device %s",
-                name,
-                value,
-                getattr(self._device, "serial", "Unknown"),
-            )
-        super().__setattr__(name, value)
 
     @property
     def is_on(self) -> bool:
