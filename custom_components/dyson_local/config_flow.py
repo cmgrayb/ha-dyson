@@ -76,7 +76,7 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Get the options flow for this handler."""
-        return DysonOptionsFlowHandler()
+        return DysonOptionsFlowHandler(config_entry)
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -722,9 +722,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class DysonOptionsFlowHandler(config_entries.OptionsFlow):
     """Dyson options flow handler."""
 
-    def __init__(self) -> None:
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        pass
+        self.config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
