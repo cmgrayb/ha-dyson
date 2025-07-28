@@ -17,7 +17,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv, entity_platform
-from homeassistant.helpers.config_validation import make_entity_service_schema
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util.percentage import (
     int_states_in_range,
@@ -38,14 +37,14 @@ ATTR_TIMER = "timer"
 SERVICE_SET_ANGLE = "set_angle"
 SERVICE_SET_TIMER = "set_timer"
 
-SET_ANGLE_SCHEMA = make_entity_service_schema(
+SET_ANGLE_SCHEMA = cv.make_entity_service_schema(
     {
         vol.Required(ATTR_ANGLE_LOW): cv.positive_int,
         vol.Required(ATTR_ANGLE_HIGH): cv.positive_int,
     }
 )
 
-SET_TIMER_SCHEMA = make_entity_service_schema(
+SET_TIMER_SCHEMA = cv.make_entity_service_schema(
     {
         vol.Required(ATTR_TIMER): cv.positive_int,
     }

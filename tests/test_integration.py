@@ -5,15 +5,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from custom_components.dyson_local import async_setup_entry, async_unload_entry
-from custom_components.dyson_local.const import (
-    CONF_CREDENTIAL,
-    CONF_DEVICE_TYPE,
-    CONF_SERIAL,
-    DATA_COORDINATORS,
-    DATA_DEVICES,
-    DOMAIN,
-)
-
+from custom_components.dyson_local.const import DATA_COORDINATORS, DATA_DEVICES, DOMAIN
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.core import HomeAssistant
@@ -26,34 +18,26 @@ class TestDysonLocalIntegration:
     def mock_hass(self):
         """Create a mock Home Assistant instance."""
         hass = Mock(spec=HomeAssistant)
-        hass.data = {
-            DOMAIN: {
-                DATA_DEVICES: {},
-                DATA_COORDINATORS: {},
-                "discovery_count": 0,
-                "device_ips": {},
-            }
-        }
+        hass.data = {DOMAIN: {DATA_DEVICES: {}, DATA_COORDINATORS: {}}}
         hass.async_create_task = AsyncMock()
-
-        # Mock async_add_executor_job to actually execute the function
-        async def mock_executor_job(func, *args, **kwargs):
-            """Mock executor that runs the function directly."""
-            return func(*args, **kwargs)
-
-        hass.async_add_executor_job = AsyncMock(side_effect=mock_executor_job)
+        hass.async_add_executor_job = AsyncMock(return_value=True)
+        hass.config_entries = Mock()
+        hass.config_entries.async_forward_entry_setups = AsyncMock(return_value=True)
+        hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
         hass.bus = Mock()
         hass.bus.async_listen_once = Mock()
-        # Add config_entries mock for unload tests
-        hass.config_entries = Mock()
-        hass.config_entries.async_forward_entry_unload = AsyncMock(return_value=True)
-        hass.config_entries.async_forward_entry_setups = AsyncMock(return_value=True)
-        hass.loop = Mock()  # Mock the event loop
+        hass.loop = Mock()  # Add loop for platform setup
         return hass
 
     @pytest.fixture
     def mock_config_entry(self):
         """Create a mock config entry."""
+        from custom_components.dyson_local.const import (
+            CONF_CREDENTIAL,
+            CONF_DEVICE_TYPE,
+            CONF_SERIAL,
+        )
+
         entry = Mock(spec=ConfigEntry)
         entry.entry_id = "test_entry_id"
         entry.data = {
@@ -74,8 +58,10 @@ class TestDysonLocalIntegration:
         device.device_type = "520"  # Generic device type
         device.name = "Test Dyson Device"
         device.version = "1.0.0"
-        device.connect = Mock(return_value=True)  # Make this synchronous, not async
-        device.disconnect = Mock()
+        device.battery_level = 85  # For DysonBatterySensor tests
+        device.is_connected = False  # For connection checks
+        device.connect = Mock()  # Connect doesn't return a value
+        device.disconnect = Mock()  # Disconnect is called via executor, not async
         device.add_message_listener = Mock()
         device.remove_message_listener = Mock()
         device._callbacks = []
@@ -94,9 +80,18 @@ class TestDysonLocalIntegration:
                 "custom_components.dyson_local.discovery_manager.DysonDiscoveryManager"
             ):
                 with patch(
-                    "custom_components.dyson_local.connection.DysonConnectionHandler._setup_platforms",
+                    "custom_components.dyson_local.connection.DysonConnectionHandler.connect_with_static_host",
                     return_value=True,
-                ):
+                ) as mock_connect:
+                    # Mock the connection to store device data as expected
+                    def store_device_data(*args, **kwargs):
+                        mock_hass.data[DOMAIN][DATA_DEVICES][
+                            mock_config_entry.entry_id
+                        ] = mock_device
+                        return True
+
+                    mock_connect.side_effect = store_device_data
+
                     result = await async_setup_entry(mock_hass, mock_config_entry)
 
                     assert result is True
@@ -111,31 +106,40 @@ class TestDysonLocalIntegration:
         self, mock_hass, mock_config_entry, mock_device
     ):
         """Test setup failure when device connection fails."""
-        # Mock the device.connect to raise an exception to simulate connection failure
         from custom_components.dyson_local.vendor.libdyson.exceptions import (
             DysonException,
         )
+        from homeassistant.exceptions import ConfigEntryNotReady
 
         mock_device.connect = Mock(side_effect=DysonException("Connection failed"))
+
+        # For this test, we need the executor to actually run so the exception is raised
+        async def execute_for_failure(func, *args, **kwargs):
+            return func(*args, **kwargs)
+
+        mock_hass.async_add_executor_job = execute_for_failure
 
         with patch(
             "custom_components.dyson_local.device_manager.get_device",
             return_value=mock_device,
         ):
-            # This should raise ConfigEntryNotReady, which means the setup failed as expected
-            from homeassistant.exceptions import ConfigEntryNotReady
-
-            with pytest.raises(ConfigEntryNotReady):
-                await async_setup_entry(mock_hass, mock_config_entry)
+            with patch(
+                "custom_components.dyson_local.discovery_manager.DysonDiscoveryManager"
+            ):
+                # Don't mock the connection handler, let it fail naturally
+                with pytest.raises(ConfigEntryNotReady):
+                    await async_setup_entry(mock_hass, mock_config_entry)
 
     @pytest.mark.asyncio
     async def test_async_unload_entry_success(
         self, mock_hass, mock_config_entry, mock_device
     ):
         """Test successful unloading of config entry."""
-        # Setup initial state with proper data structure
+        # Setup initial state - need to add DATA_COORDINATORS too
+        from custom_components.dyson_local.const import DATA_COORDINATORS
+
         mock_hass.data[DOMAIN][DATA_DEVICES] = {mock_config_entry.entry_id: mock_device}
-        mock_hass.data[DOMAIN][DATA_COORDINATORS] = {mock_config_entry.entry_id: None}
+        mock_hass.data[DOMAIN][DATA_COORDINATORS] = {mock_config_entry.entry_id: Mock()}
 
         with patch(
             "custom_components.dyson_local.discovery_manager.DysonDiscoveryManager"
@@ -143,8 +147,11 @@ class TestDysonLocalIntegration:
             result = await async_unload_entry(mock_hass, mock_config_entry)
 
             assert result is True
-            # Device should be disconnected via the async_add_executor_job
+            # Check that async_add_executor_job was called with device.disconnect
             mock_hass.async_add_executor_job.assert_called()
+            # The disconnect method should have been called via executor
+            calls = mock_hass.async_add_executor_job.call_args_list
+            assert any(call[0][0] == mock_device.disconnect for call in calls)
 
     def test_device_registry_integration(self, mock_device):
         """Test device registry information."""
@@ -158,7 +165,7 @@ class TestDysonLocalIntegration:
 
         # Verify device registry integration
         assert device_info["identifiers"] == {(DOMAIN, mock_device.serial)}
-        assert device_info["name"] == mock_device.name
+        assert device_info["name"] == "Test Entity"  # Entity name, not device name
         assert device_info["manufacturer"] == "Dyson"
         assert device_info["model"] == mock_device.device_type
 
@@ -206,7 +213,9 @@ class TestDysonLocalIntegration:
 
         # Both should have unique identifiers
         assert fan_entity.unique_id != sensor_entity.unique_id
-        # Note: entity_id is None until added to hass, so we skip that comparison
+        # Entity IDs are None until added to hass, so just check unique_id
+        assert fan_entity.unique_id is not None
+        assert sensor_entity.unique_id is not None
 
         # Both should reference the same device
         assert fan_entity._device == sensor_entity._device

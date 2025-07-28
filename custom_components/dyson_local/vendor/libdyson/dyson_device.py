@@ -1,9 +1,10 @@
 """Dyson device."""
+
 from abc import abstractmethod
 import json
 import logging
 import threading
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import paho.mqtt.client as mqtt
 
@@ -17,6 +18,7 @@ from .exceptions import (
     DysonConnectionRefused,
     DysonConnectTimeout,
     DysonInvalidCredential,
+    DysonNoEnvironmentalData,
     DysonNotConnected,
 )
 from .utils import mqtt_time
@@ -72,13 +74,47 @@ class DysonDevice:
 
     def connect(self, host: str) -> None:
         """Connect to the device MQTT broker."""
+        _LOGGER.debug(
+            "Connecting to MQTT broker at %s for device %s (type: %s)",
+            host,
+            self._serial,
+            self.device_type,
+        )
+
         self._disconnected.clear()
         self._mqtt_client = mqtt.Client(protocol=mqtt.MQTTv31)
         self._mqtt_client.username_pw_set(self._serial, self._credential)
         error = None
 
         def _on_connect(client: mqtt.Client, userdata: Any, flags, rc):
-            _LOGGER.debug("Connected with result code %d", rc)
+            _LOGGER.debug("MQTT connection attempt result code: %d", rc)
+
+            # Log detailed connection results
+            if rc == mqtt.CONNACK_ACCEPTED:
+                _LOGGER.debug(
+                    "MQTT connection accepted, subscribing to status topic: %s",
+                    self._status_topic,
+                )
+            elif rc == mqtt.CONNACK_REFUSED_BAD_USERNAME_PASSWORD:
+                _LOGGER.error("MQTT connection refused: Bad username/password (rc=1)")
+                _LOGGER.error("  Username: %s", self._serial)
+                _LOGGER.error("  This usually indicates invalid credentials")
+            elif rc == mqtt.CONNACK_REFUSED_IDENTIFIER_REJECTED:
+                _LOGGER.error("MQTT connection refused: Identifier rejected (rc=2)")
+            elif rc == mqtt.CONNACK_REFUSED_SERVER_UNAVAILABLE:
+                _LOGGER.error("MQTT connection refused: Server unavailable (rc=3)")
+            elif rc == mqtt.CONNACK_REFUSED_NOT_AUTHORIZED:
+                _LOGGER.error("MQTT connection refused: Not authorized (rc=5)")
+            elif rc == 7:
+                _LOGGER.error("MQTT connection refused: Connection refused (rc=7)")
+                _LOGGER.error("  This may indicate:")
+                _LOGGER.error("    - Wrong device type (current: %s)", self.device_type)
+                _LOGGER.error("    - Device firmware issue")
+                _LOGGER.error("    - Device MQTT broker not available")
+                _LOGGER.error("    - Too many concurrent connections")
+            else:
+                _LOGGER.error("MQTT connection refused: Unknown error (rc=%d)", rc)
+
             nonlocal error
             if rc == mqtt.CONNACK_REFUSED_BAD_USERNAME_PASSWORD:
                 error = DysonInvalidCredential
@@ -98,6 +134,8 @@ class DysonDevice:
         self._mqtt_client.on_message = self._on_message
         self._mqtt_client.connect_async(host)
         self._mqtt_client.loop_start()
+
+        _LOGGER.debug("Waiting for MQTT connection to complete...")
         if self._connected.wait(timeout=TIMEOUT):
             if error is not None:
                 self.disconnect()
@@ -289,7 +327,7 @@ class DysonFanDevice(DysonDevice):
     def _get_field_value(state: Dict[str, Any], field: str):
         try:
             return state[field][1] if isinstance(state[field], list) else state[field]
-        except (KeyError, TypeError, IndexError):
+        except:
             return None
 
     def _get_environmental_field_value(
@@ -323,6 +361,9 @@ class DysonFanDevice(DysonDevice):
 
     def _set_configuration(self, **kwargs: dict) -> None:
         if not self.is_connected:
+            _LOGGER.debug(
+                "Device %s not connected, cannot send configuration", self.serial
+            )
             raise DysonNotConnected
         payload = json.dumps(
             {

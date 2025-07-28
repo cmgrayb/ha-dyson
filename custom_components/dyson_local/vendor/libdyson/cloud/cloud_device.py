@@ -1,6 +1,5 @@
 """Dyson device cloud client."""
 
-
 from . import DysonAccount
 
 
