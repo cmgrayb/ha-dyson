@@ -17,3 +17,8 @@ DATA_COORDINATORS = "coordinators"
 DEFAULT_CLOUD_POLL_INTERVAL = 3600  # 1 hour in seconds
 DEFAULT_AUTO_DISCOVERY = True  # Enable auto-discovery by default
 DEFAULT_ENABLE_POLLING = True  # Enable polling for changes by default
+
+# Device-specific constants
+PURE_COOL_LINK_FILTER_LIFE_MAX_HOURS = (
+    4300  # Maximum filter life in hours for Pure Cool Link
+)

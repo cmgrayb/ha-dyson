@@ -24,7 +24,12 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .const import DATA_COORDINATORS, DATA_DEVICES, DOMAIN
+from .const import (
+    DATA_COORDINATORS,
+    DATA_DEVICES,
+    DOMAIN,
+    PURE_COOL_LINK_FILTER_LIFE_MAX_HOURS,
+)
 from .entity import DysonEntity
 from .vendor.libdyson import (
     Dyson360Eye,
@@ -198,7 +203,7 @@ class DysonFilterLifeSensorPercentage(DysonSensor):
     @property
     def native_value(self) -> float:
         """Return the state of the sensor calculated to a %."""
-        return (self._device.filter_life / 4300) * 100
+        return (self._device.filter_life / PURE_COOL_LINK_FILTER_LIFE_MAX_HOURS) * 100
 
 
 class DysonCarbonFilterLifeSensor(DysonSensor):
@@ -328,7 +333,7 @@ class DysonPM25Sensor(DysonSensorEnvironmental):
     @property
     def native_value(self) -> Optional[int]:  # type: ignore[override]
         """Return the state of the sensor.
-        
+
         The PM2.5 value is retrieved from the device and converted to an integer
         before being returned. If the value is unavailable or invalid, None is returned.
         """
