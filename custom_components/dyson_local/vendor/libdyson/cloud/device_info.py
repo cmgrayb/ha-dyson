@@ -2,8 +2,6 @@
 
 from typing import Optional
 
-import attr
-
 from ..const import (
     DEVICE_TYPE_360_EYE,
     DEVICE_TYPE_360_HEURIST,
@@ -16,13 +14,6 @@ from ..const import (
     DEVICE_TYPE_PURE_HOT_COOL_LINK,
     DEVICE_TYPE_PURE_HUMIDIFY_COOL,
     DEVICE_TYPE_PURIFIER_BIG_QUIET,
-    DEVICE_TYPE_PURIFIER_COOL_E,
-    DEVICE_TYPE_PURIFIER_COOL_K,
-    DEVICE_TYPE_PURIFIER_COOL_M,
-    DEVICE_TYPE_PURIFIER_HOT_COOL_E,
-    DEVICE_TYPE_PURIFIER_HOT_COOL_K,
-    DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_E,
-    DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K,
 )
 from .utils import decrypt_password
 
@@ -211,20 +202,33 @@ def map_product_type_to_device_type(
     return None
 
 
-@attr.s(auto_attribs=True, frozen=True)
 class DysonDeviceInfo:
-    """Dyson device info with complete OpenAPI field support."""
+    """Dyson device info."""
 
-    # Core required fields (existing)
-    serial: str
-    name: str
-    version: str
-    credential: str
-    auto_update: bool
-    new_version_available: bool
-    product_type: str
-    variant: Optional[str] = None  # Add variant field for better device type detection
-    mqtt_root_topic_level: Optional[str] = None  # Direct MQTT topic from cloud API
+    def __init__(
+        self,
+        active: Optional[bool],
+        serial: str,
+        name: str,
+        version: str,
+        credential: str,
+        auto_update: bool,
+        new_version_available: bool,
+        product_type: str,
+        variant: Optional[str] = None,
+        mqtt_root_topic_level: Optional[str] = None,
+    ):
+        """Initialize DysonDeviceInfo."""
+        self.active = active
+        self.serial = serial
+        self.name = name
+        self.version = version
+        self.credential = credential
+        self.auto_update = auto_update
+        self.new_version_available = new_version_available
+        self.product_type = product_type
+        self.variant = variant
+        self.mqtt_root_topic_level = mqtt_root_topic_level
 
     @classmethod
     def from_raw(cls, raw: dict):

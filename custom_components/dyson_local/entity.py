@@ -26,9 +26,9 @@ class DysonEntity(Entity):
         """Initialize the entity."""
         self._device = device
         self._name = name
-        self._last_oscillation_state: Optional[
-            dict[str, Any]
-        ] = None  # Track the last known oscillation state
+        self._last_oscillation_state: Optional[dict[str, Any]] = (
+            None  # Track the last known oscillation state
+        )
 
         # Set attributes to avoid property override issues
         self._attr_should_poll = False
@@ -202,7 +202,7 @@ class DysonEntity(Entity):
         """Return device info of the entity."""
         return {
             "identifiers": {(DOMAIN, self._device.serial)},
-            "name": getattr(self._device, "name", self._name),
+            "name": self._name,
             "manufacturer": "Dyson",
             "model": self._device.device_type,
         }
