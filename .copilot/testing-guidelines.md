@@ -13,8 +13,9 @@ This document provides specific guidelines for testing the Dyson Home Assistant 
 For convenience, there's a VSCode task that runs the complete pre-push sequence:
 
 **VSCode Task: "Prepare for Push (Pre-commit Ready)"**
+
 - Access via Command Palette: `Ctrl+Shift+P` → "Tasks: Run Task" → "Prepare for Push (Pre-commit Ready)"
-- Runs: Flake8 → isort → pytest → Black (in that order)
+- Runs: isort → Black → Flake8 → pytest (in that order)
 - Provides clear status indicators for each step
 - Stops on first failure for immediate feedback
 
@@ -100,8 +101,8 @@ Run this complete sequence to verify code quality:
 echo "Running complete quality checks..."
 
 echo "1. Code formatting..."
-black custom_components/dyson_local/
 isort custom_components/dyson_local/
+black custom_components/dyson_local/
 
 echo "2. Linting..."
 flake8 custom_components/dyson_local/
@@ -125,7 +126,7 @@ echo "All quality checks completed!"
 
 Before committing changes, run:
 
-1. **Format code**: `black custom_components/dyson_local/ && isort custom_components/dyson_local/`
+1. **Format code**: `isort custom_components/dyson_local/ && black custom_components/dyson_local/`
 2. **Run linting**: `flake8 custom_components/dyson_local/`
 3. **Check types**: `mypy custom_components/dyson_local/`
 4. **Run tests**: `pytest tests/ -v`

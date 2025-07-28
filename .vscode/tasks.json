@@ -146,7 +146,7 @@
         {
             "label": "Prepare for Push (Pre-commit Ready)",
             "type": "shell",
-            "command": "echo '🚀 Preparing code for push...' && echo '1️⃣ Running Flake8...' && flake8 custom_components/dyson_local/ && echo '✅ Flake8 passed' && echo '2️⃣ Running isort...' && isort custom_components/dyson_local/ && echo '✅ isort completed' && echo '3️⃣ Running tests...' && pytest tests/ -v --tb=short && echo '✅ All tests passed' && echo '4️⃣ Running Black...' && black custom_components/dyson_local/ && echo '✅ Black formatting applied' && echo '🎉 Code is ready for push and pre-commit!'",
+            "command": "echo '🚀 Preparing code for push...' && echo '1️⃣ Running isort...' && isort custom_components/dyson_local/ && echo '✅ isort completed' && echo '2️⃣ Running Black...' && black custom_components/dyson_local/ && echo '✅ Black formatting applied' && echo '3️⃣ Running Flake8...' && flake8 custom_components/dyson_local/ && echo '✅ Flake8 passed' && echo '4️⃣ Running tests...' && pytest tests/ -v --tb=short && echo '✅ All tests passed' && echo '🎉 Code is ready for push and pre-commit!'",
             "group": "build",
             "problemMatcher": [
                 "$python"
