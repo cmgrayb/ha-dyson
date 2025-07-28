@@ -327,7 +327,11 @@ class DysonPM25Sensor(DysonSensorEnvironmental):
 
     @property
     def native_value(self) -> Optional[int]:  # type: ignore[override]
-        """Return the state of the sensor."""
+        """Return the state of the sensor.
+        
+        The PM2.5 value is retrieved from the device and converted to an integer
+        before being returned. If the value is unavailable or invalid, None is returned.
+        """
         try:
             if (value := self._device.particulate_matter_2_5) is not None and value >= 0:  # type: ignore[attr-defined]
                 return int(value)
