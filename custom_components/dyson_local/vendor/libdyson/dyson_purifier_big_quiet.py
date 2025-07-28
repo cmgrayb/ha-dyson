@@ -32,7 +32,10 @@ class DysonBigQuiet(DysonFanDevice):
     @property
     def tilt(self) -> int:
         """Return the tilt in degrees."""
-        return int(self._get_field_value(self._status, "otau") or self._get_field_value(self._status, "otal"))
+        return int(
+            self._get_field_value(self._status, "otau")
+            or self._get_field_value(self._status, "otal")
+        )
 
     @property
     def carbon_filter_life(self) -> Optional[int]:
@@ -50,12 +53,18 @@ class DysonBigQuiet(DysonFanDevice):
     @property
     def particulate_matter_2_5(self):
         """Return PM 2.5 in micro grams per cubic meter."""
-        return int(self._get_environmental_field_value("p25r") or self._get_environmental_field_value("pm25"))
+        return int(
+            self._get_environmental_field_value("p25r")
+            or self._get_environmental_field_value("pm25")
+        )
 
     @property
     def particulate_matter_10(self):
         """Return PM 2.5 in micro grams per cubic meter."""
-        return int(self._get_environmental_field_value("p10r") or self._get_environmental_field_value("pm10"))
+        return int(
+            self._get_environmental_field_value("p10r")
+            or self._get_environmental_field_value("pm10")
+        )
 
     @property
     def volatile_organic_compounds(self) -> float:

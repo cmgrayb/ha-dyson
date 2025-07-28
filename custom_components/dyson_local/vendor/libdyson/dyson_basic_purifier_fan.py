@@ -3,8 +3,8 @@
 from abc import abstractmethod
 from typing import Optional
 
-from .dyson_basic_fan import DysonBasicFan
 from .const import ENVIRONMENTAL_FAIL, ENVIRONMENTAL_INIT, ENVIRONMENTAL_OFF
+from .dyson_basic_fan import DysonBasicFan
 
 
 class DysonBasicPurifierFan(DysonBasicFan):
@@ -113,9 +113,10 @@ class DysonBasicPurifierFan(DysonBasicFan):
 
     def _set_configuration(self, **kwargs) -> None:
         """Set device configuration."""
+        import json
+
         from .exceptions import DysonNotConnected
         from .utils import mqtt_time
-        import json
 
         if not self.is_connected:
             raise DysonNotConnected

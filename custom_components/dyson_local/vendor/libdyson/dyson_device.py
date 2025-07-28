@@ -1,4 +1,5 @@
 """Dyson device."""
+
 from abc import abstractmethod
 import json
 import logging

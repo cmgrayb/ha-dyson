@@ -131,8 +131,6 @@ dmypy.json
 # Jetbrains/IntelliJ
 .idea/
 
-# VSCode configuration
-.vscode/
 **/*.code-workspace
 
 # Home Assistant mock testing configuration

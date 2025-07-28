@@ -25,9 +25,9 @@ class DysonDeviceInfo:
 
     # OpenAPI Device schema fields
     category: Optional[str] = None  # ec, flrc, hc, light, robot, wearable
-    connection_category: Optional[
-        str
-    ] = None  # lecAndWifi, lecOnly, nonConnected, wifiOnly
+    connection_category: Optional[str] = (
+        None  # lecAndWifi, lecOnly, nonConnected, wifiOnly
+    )
     model: Optional[str] = None  # Actual model number (TP04, HP07, etc.)
     type: Optional[str] = None  # MQTT topic prefix (438, 527, etc.)
     variant: Optional[str] = None  # Regional variant (K, E, M, etc.)
