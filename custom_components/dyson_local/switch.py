@@ -85,7 +85,25 @@ class DysonContinuousMonitoringSwitchEntity(DysonEntity, SwitchEntity):  # type:
     @property
     def is_on(self):  # type: ignore[override]
         """Return if continuous monitoring is on."""
-        return self._device.continuous_monitoring  # type: ignore[attr-defined]
+        try:
+            return self._device.continuous_monitoring  # type: ignore[attr-defined]
+        except (AttributeError, TypeError):
+            return False
+
+    @property
+    def available(self) -> bool:
+        """Return if continuous monitoring is available."""
+        # For basic purifiers, continuous monitoring should always be available
+        # since they have the property and methods inherited from DysonDevice
+        from .vendor.libdyson.dyson_basic_purifier_fan import DysonBasicPurifierFan
+
+        if isinstance(self._device, DysonBasicPurifierFan):
+            return True
+
+        # For other devices, check if they have the required properties and methods
+        return hasattr(self._device, "continuous_monitoring") and hasattr(
+            self._device, "enable_continuous_monitoring"
+        )
 
     def turn_on(self, **kwargs):
         """Turn on continuous monitoring."""

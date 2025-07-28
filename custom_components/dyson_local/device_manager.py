@@ -164,9 +164,15 @@ class DysonDeviceManager:
         async def async_update_data() -> None:
             """Poll environmental data from the device."""
             try:
-                await self.hass.async_add_executor_job(
-                    device.request_environmental_data  # type: ignore[attr-defined]
-                )
+                # Only request environmental data if the device supports it
+                if hasattr(device, "request_environmental_data"):
+                    await self.hass.async_add_executor_job(
+                        device.request_environmental_data  # type: ignore[attr-defined]
+                    )
+                else:
+                    # For devices without this method (like basic purifiers),
+                    # environmental data comes via MQTT automatically
+                    pass
             except DysonInvalidAuth as err:
                 # Handle authentication errors during device polling
                 _LOGGER.warning(

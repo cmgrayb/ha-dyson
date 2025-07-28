@@ -6,13 +6,25 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .cloud.const import CONF_REGION
-from .cloud.manager import async_setup_account
+from .cloud.manager import PLATFORMS as CLOUD_PLATFORMS, async_setup_account
 from .const import DATA_COORDINATORS, DATA_DEVICES, DATA_DISCOVERY, DOMAIN
 from .device_manager import DysonDeviceManager
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["camera"]
+PLATFORMS = [
+    "binary_sensor",
+    "button",
+    "camera",
+    "climate",
+    "fan",
+    "humidifier",
+    "number",
+    "select",
+    "sensor",
+    "switch",
+    "vacuum",
+]
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
@@ -46,7 +58,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Handle cloud accounts
     if CONF_REGION in entry.data:
-        unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+        unload_ok = await hass.config_entries.async_unload_platforms(
+            entry, CLOUD_PLATFORMS
+        )
         if unload_ok and entry.entry_id in hass.data[DOMAIN]:
             hass.data[DOMAIN].pop(entry.entry_id)
         return unload_ok

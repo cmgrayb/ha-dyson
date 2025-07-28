@@ -4,14 +4,7 @@ from typing import Any, List, Optional
 
 from homeassistant.const import STATE_OFF
 
-from .vendor.libdyson import (
-    Dyson360Eye,
-    Dyson360Heurist,
-    Dyson360VisNav,
-    DysonPureHotCool,
-    DysonPureHotCoolLink,
-    DysonPurifierHumidifyCool,
-)
+from .vendor.libdyson import Dyson360Eye, Dyson360Heurist, Dyson360VisNav
 from .vendor.libdyson.const import (
     ENVIRONMENTAL_FAIL,
     ENVIRONMENTAL_INIT,
@@ -45,12 +38,21 @@ def get_platforms_for_device(device: DysonDevice) -> List[str]:
 
     platforms = ["fan", "select", "sensor", "switch"]
 
-    if isinstance(device, DysonPureHotCool):
+    # Check for heating capability (climate platform)
+    if hasattr(device, "heat_target") or hasattr(device, "heat_mode"):
         platforms.append("climate")
-    if isinstance(device, DysonPureHotCoolLink):
-        platforms.extend(["binary_sensor", "climate"])
-    if isinstance(device, DysonPurifierHumidifyCool):
+
+    # Check for legacy Link device (additional platforms)
+    if hasattr(device, "device_type") and device.device_type in ["455", "475", "469"]:
+        platforms.append("binary_sensor")
+        if device.device_type == "455":  # HP02 (Pure Hot+Cool Link)
+            platforms.append("climate")
+
+    # Check for humidification capability
+    if hasattr(device, "humidification") or hasattr(device, "target_humidity"):
         platforms.append("humidifier")
+
+    # Check for filter monitoring (button platform)
     if (
         hasattr(device, "filter_life")
         or hasattr(device, "carbon_filter_life")

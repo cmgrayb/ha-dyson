@@ -2,14 +2,16 @@
 
 import logging
 import threading
-from typing import Callable, Optional, cast
+from typing import Any, Callable, Optional, cast
 
 import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.components.zeroconf import async_get_instance
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import CONF_EMAIL, CONF_HOST, CONF_NAME, CONF_PASSWORD
 from homeassistant.core import callback
+from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 
 from .cloud.const import CONF_AUTH, CONF_REGION
@@ -29,27 +31,7 @@ from .vendor.libdyson.cloud import (
     DysonDeviceInfo,
 )
 
-# Import device type constants for mapping
-from .vendor.libdyson.const import (
-    DEVICE_TYPE_360_EYE,
-    DEVICE_TYPE_360_HEURIST,
-    DEVICE_TYPE_360_VIS_NAV,
-    DEVICE_TYPE_PURE_COOL,
-    DEVICE_TYPE_PURE_COOL_DESK,
-    DEVICE_TYPE_PURE_COOL_LINK,
-    DEVICE_TYPE_PURE_COOL_LINK_DESK,
-    DEVICE_TYPE_PURE_HOT_COOL,
-    DEVICE_TYPE_PURE_HOT_COOL_LINK,
-    DEVICE_TYPE_PURE_HUMIDIFY_COOL,
-    DEVICE_TYPE_PURIFIER_BIG_QUIET,
-    DEVICE_TYPE_PURIFIER_COOL_E,
-    DEVICE_TYPE_PURIFIER_COOL_K,
-    DEVICE_TYPE_PURIFIER_COOL_M,
-    DEVICE_TYPE_PURIFIER_HOT_COOL_E,
-    DEVICE_TYPE_PURIFIER_HOT_COOL_K,
-    DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_E,
-    DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K,
-)
+# Note: Enhanced device detection now handles device type mapping automatically
 from .vendor.libdyson.discovery import DysonDiscovery
 from .vendor.libdyson.exceptions import (
     DysonException,
@@ -78,75 +60,8 @@ SETUP_METHODS = {
 }
 
 
-# Mapping from cloud API ProductType to internal device type codes
-CLOUD_PRODUCT_TYPE_TO_DEVICE_TYPE = {
-    # 360 Eye robot vacuum
-    "360 Eye": DEVICE_TYPE_360_EYE,
-    "360EYE": DEVICE_TYPE_360_EYE,
-    "N223": DEVICE_TYPE_360_EYE,
-    # 360 Heurist robot vacuum
-    "360 Heurist": DEVICE_TYPE_360_HEURIST,
-    "360HEURIST": DEVICE_TYPE_360_HEURIST,
-    "276": DEVICE_TYPE_360_HEURIST,
-    # 360 Vis Nav robot vacuum
-    "360 Vis Nav": DEVICE_TYPE_360_VIS_NAV,
-    "360VIS": DEVICE_TYPE_360_VIS_NAV,
-    "277": DEVICE_TYPE_360_VIS_NAV,
-    # Pure Cool Link models
-    "TP02": DEVICE_TYPE_PURE_COOL_LINK,
-    "TP01": DEVICE_TYPE_PURE_COOL_LINK,
-    "DP01": DEVICE_TYPE_PURE_COOL_LINK_DESK,
-    "DP02": DEVICE_TYPE_PURE_COOL_LINK_DESK,
-    "475": DEVICE_TYPE_PURE_COOL_LINK,
-    "469": DEVICE_TYPE_PURE_COOL_LINK_DESK,
-    # Pure Cool models
-    "TP04": DEVICE_TYPE_PURE_COOL,
-    "AM06": DEVICE_TYPE_PURE_COOL_DESK,
-    "438": DEVICE_TYPE_PURE_COOL,  # Older TP04 devices (when no variant field)
-    "520": DEVICE_TYPE_PURE_COOL_DESK,
-    # Purifier Cool models (newer) - specific model mappings for better compatibility
-    "TP07": DEVICE_TYPE_PURIFIER_COOL_K,  # TP07 typically K series
-    "TP09": DEVICE_TYPE_PURIFIER_COOL_K,  # TP09 typically K series
-    "TP11": DEVICE_TYPE_PURIFIER_COOL_M,  # TP11 is M series
-    "PC1": DEVICE_TYPE_PURIFIER_COOL_M,  # PC1 is M series
-    # Variant combinations for Cool series
-    "438K": DEVICE_TYPE_PURIFIER_COOL_K,
-    "438E": DEVICE_TYPE_PURIFIER_COOL_E,
-    "438M": DEVICE_TYPE_PURIFIER_COOL_M,
-    # Pure Hot+Cool Link models
-    "HP02": DEVICE_TYPE_PURE_HOT_COOL_LINK,
-    "455": DEVICE_TYPE_PURE_HOT_COOL_LINK,
-    # Pure Hot+Cool models
-    "HP04": DEVICE_TYPE_PURE_HOT_COOL,
-    "527": DEVICE_TYPE_PURE_HOT_COOL,  # Older HP04 devices (when no variant field)
-    # Purifier Hot+Cool models (newer) - specific model mappings for better compatibility
-    "HP07": DEVICE_TYPE_PURIFIER_HOT_COOL_K,  # HP07 typically K series
-    "HP09": DEVICE_TYPE_PURIFIER_HOT_COOL_K,  # HP09 typically K series
-    # Variant combinations for Hot+Cool series
-    "527K": DEVICE_TYPE_PURIFIER_HOT_COOL_K,
-    "527E": DEVICE_TYPE_PURIFIER_HOT_COOL_E,
-    "527M": DEVICE_TYPE_PURIFIER_HOT_COOL_K,  # HP series doesn't have M variant, map to K
-    # Pure Humidify+Cool models
-    "PH01": DEVICE_TYPE_PURE_HUMIDIFY_COOL,
-    "PH02": DEVICE_TYPE_PURE_HUMIDIFY_COOL,
-    "358": DEVICE_TYPE_PURE_HUMIDIFY_COOL,  # Older PH01/PH02 devices (when no variant field)
-    # Purifier Humidify+Cool models (newer) - specific model mappings for better compatibility
-    "PH03": DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K,  # PH03 typically K series
-    "PH04": DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K,  # PH04 typically K series
-    # Variant combinations for Humidify+Cool series
-    "358K": DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K,
-    "358E": DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_E,
-    "358M": DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K,  # PH series doesn't have M variant, map to K
-    # Purifier Big+Quiet models
-    "BP02": DEVICE_TYPE_PURIFIER_BIG_QUIET,
-    "BP03": DEVICE_TYPE_PURIFIER_BIG_QUIET,
-    "BP04": DEVICE_TYPE_PURIFIER_BIG_QUIET,
-    "664": DEVICE_TYPE_PURIFIER_BIG_QUIET,
-}
-
-
-# Note: We use the mapping function from device_info.py instead of duplicating it here
-# to ensure consistent behavior and proper variant handling
+# Note: Device type detection is now handled by enhanced MQTT detection
+# in device_info.get_mqtt_device_type() instead of manual mapping
 
 
 class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -157,19 +72,23 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> config_entries.OptionsFlow:
         """Get the options flow for this handler."""
-        return DysonOptionsFlowHandler(config_entry)
+        return DysonOptionsFlowHandler()
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the config flow."""
         self._device_info: Optional[DysonDeviceInfo] = None
         self._reauth_entry: Optional[config_entries.ConfigEntry] = None
         self._email: str = ""
         self._region: str = ""
-        self._verify: Optional[Callable] = None
+        self._verify: Optional[Callable[..., Any]] = None
 
-    async def async_step_user(self, user_input: Optional[dict] = None):
+    async def async_step_user(
+        self, user_input: Optional[dict[str, Any]] = None
+    ) -> ConfigFlowResult:
         """Handle step initialized by user."""
         if user_input is not None:
             if user_input[CONF_METHOD] == "wifi":
@@ -183,7 +102,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({vol.Required(CONF_METHOD): vol.In(SETUP_METHODS)}),
         )
 
-    async def async_step_wifi(self, info: Optional[dict] = None):
+    async def async_step_wifi(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> ConfigFlowResult:
         """Handle step to set up using device Wi-Fi information."""
         errors = {}
         if info is not None:
@@ -234,7 +155,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_cloud(self, info: Optional[dict] = None):
+    async def async_step_cloud(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         if info is not None:
             self._region = info[CONF_REGION]
             if self._region == "CN":
@@ -247,7 +170,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({vol.Required(CONF_REGION): vol.In(region_names)}),
         )
 
-    async def async_step_email(self, info: Optional[dict] = None):
+    async def async_step_email(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         errors = {}
         if info is not None:
             email = info[CONF_EMAIL]
@@ -284,7 +209,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_email_otp(self, info: Optional[dict] = None):
+    async def async_step_email_otp(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         errors = {}
         if info is not None:
             try:
@@ -321,7 +248,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_mobile(self, info: Optional[dict] = None):
+    async def async_step_mobile(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         errors = {}
         if info is not None:
             account = DysonAccountCN()
@@ -349,7 +278,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_mobile_otp(self, info: Optional[dict] = None):
+    async def async_step_mobile_otp(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         errors = {}
         if info is not None:
             try:
@@ -385,7 +316,9 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_manual(self, info: Optional[dict] = None):
+    async def async_step_manual(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         """Handle step to setup manually."""
         errors = {}
         if info is not None:
@@ -436,19 +369,21 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_host(self, info: Optional[dict] = None):
+    async def async_step_host(
+        self, info: Optional[dict[str, Any]] = None
+    ) -> FlowResult:
         """Handle step to set host."""
         errors = {}
         if info is not None:
             assert self._device_info is not None  # Should be set by discovery step
-            # Use the device info's built-in mapping method which handles variants properly
-            device_type = self._device_info.get_device_type()
+            # Use the enhanced MQTT device type detection which handles all variants properly
+            device_type = self._device_info.get_mqtt_device_type()
 
             _LOGGER.debug(
-                "Cloud ProductType: %s, variant: %s, Mapped to: %s",
+                "Cloud ProductType: %s, Enhanced MQTT device type: %s, Debug info: %s",
                 self._device_info.product_type,
-                getattr(self._device_info, "variant", None),
                 device_type,
+                self._device_info.debug_info(),
             )
             _LOGGER.debug(
                 "Device info object has variant attribute: %s",
@@ -787,18 +722,18 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class DysonOptionsFlowHandler(config_entries.OptionsFlow):
     """Dyson options flow handler."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+    def __init__(self) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
+        pass
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        # Show options for both cloud and local devices
+        # Check if this is a cloud-configured device
         if CONF_AUTH in self.config_entry.data:
-            # Cloud-configured device with full options
+            # Cloud device - show full options with interval description
             from .const import (
                 CONF_CLOUD_POLL_INTERVAL,
                 CONF_ENABLE_POLLING,
@@ -838,23 +773,30 @@ class DysonOptionsFlowHandler(config_entries.OptionsFlow):
                 },
             )
         else:
-            # Local-only device with basic options
-            from .const import CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
+            # Local device - use separate step without interval variable
+            return await self.async_step_local_options(user_input)
 
-            current_enable_polling = self.config_entry.options.get(
-                CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
-            )
+    async def async_step_local_options(self, user_input=None):
+        """Manage local device options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
 
-            return self.async_show_form(
-                step_id="init",
-                data_schema=vol.Schema(
-                    {
-                        vol.Optional(
-                            CONF_ENABLE_POLLING, default=current_enable_polling
-                        ): bool,
-                    }
-                ),
-            )
+        from .const import CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
+
+        current_enable_polling = self.config_entry.options.get(
+            CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
+        )
+
+        return self.async_show_form(
+            step_id="local_options",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_ENABLE_POLLING, default=current_enable_polling
+                    ): bool,
+                }
+            ),
+        )
 
 
 class CannotConnect(HomeAssistantError):

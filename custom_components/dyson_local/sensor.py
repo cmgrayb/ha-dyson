@@ -36,6 +36,7 @@ from .vendor.libdyson import (
     DysonPurifierHumidifyCool,
 )
 from .vendor.libdyson.const import MessageType
+from .vendor.libdyson.dyson_basic_purifier_fan import DysonBasicPurifierFan
 
 
 async def async_setup_entry(
@@ -52,11 +53,15 @@ async def async_setup_entry(
         entities = [DysonBatterySensor(device, name)]
     else:
         coordinator = hass.data[DOMAIN][DATA_COORDINATORS][config_entry.entry_id]
-        entities = [
-            DysonHumiditySensor(coordinator, device, name),
-            DysonTemperatureSensor(coordinator, device, name),
-            DysonVOCSensor(coordinator, device, name),
-        ]
+        entities = []
+
+        # Add environmental sensors based on device capabilities
+        if hasattr(device, "humidity"):
+            entities.append(DysonHumiditySensor(coordinator, device, name))
+        if hasattr(device, "temperature"):
+            entities.append(DysonTemperatureSensor(coordinator, device, name))
+        if hasattr(device, "volatile_organic_compounds"):
+            entities.append(DysonVOCSensor(coordinator, device, name))
 
         if isinstance(device, DysonPureCoolLink):
             entities.extend(
@@ -74,13 +79,18 @@ async def async_setup_entry(
                 ):
                     entities.append(DysonCarbonDioxideSensor(coordinator, device, name))
 
-            entities.extend(
-                [
-                    DysonPM25Sensor(coordinator, device, name),
-                    DysonPM10Sensor(coordinator, device, name),
-                    DysonNO2Sensor(coordinator, device, name),
-                ]
-            )
+            # Add particulate matter sensors based on device capabilities
+            # Always create PM sensors for basic purifiers (they have them even if not detected during discovery)
+            if isinstance(device, DysonBasicPurifierFan) or hasattr(
+                device, "particulate_matter_2_5"
+            ):
+                entities.append(DysonPM25Sensor(coordinator, device, name))
+            if isinstance(device, DysonBasicPurifierFan) or hasattr(
+                device, "particulate_matter_10"
+            ):
+                entities.append(DysonPM10Sensor(coordinator, device, name))
+            if hasattr(device, "nitrogen_dioxide"):
+                entities.append(DysonNO2Sensor(coordinator, device, name))
             if device.carbon_filter_life is None:
                 entities.append(DysonCombinedFilterLifeSensor(device, name))
             else:
@@ -131,6 +141,19 @@ class DysonSensorEnvironmental(CoordinatorEntity, DysonSensor):  # type: ignore[
         CoordinatorEntity.__init__(self, coordinator)
         DysonSensor.__init__(self, device, name)
 
+    @property
+    def available(self) -> bool:
+        """Return if the sensor is available."""
+        # For basic purifiers, environmental sensors should be available
+        # even if no data has been received yet
+        from .vendor.libdyson.dyson_basic_purifier_fan import DysonBasicPurifierFan
+
+        if isinstance(self._device, DysonBasicPurifierFan):
+            return True
+
+        # For other devices, use the default coordinator availability
+        return super().available if hasattr(super(), "available") else True
+
 
 class DysonBatterySensor(DysonSensor):
     """Dyson battery sensor."""
@@ -159,22 +182,6 @@ class DysonFilterLifeSensor(DysonSensor):
     def native_value(self) -> int:  # type: ignore[override]
         """Return the state of the sensor."""
         return self._device.filter_life  # type: ignore[attr-defined]
-
-
-class DysonFilterLifeSensorPercentage(DysonSensor):
-    """Dyson filter life sensor (in percentage) for Pure Cool Link."""
-
-    _SENSOR_TYPE = "filter_life_percentage"
-    _SENSOR_NAME = "Filter Life Percentage"
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_icon = "mdi:filter-outline"
-    _attr_native_unit_of_measurement = PERCENTAGE
-    _attr_suggested_display_precision = 0
-
-    @property
-    def native_value(self) -> float:
-        """Return the state of the sensor calculated to a %."""
-        return (self._device.filter_life / 4300) * 100
 
 
 class DysonFilterLifeSensorPercentage(DysonSensor):
@@ -318,16 +325,29 @@ class DysonPM25Sensor(DysonSensorEnvironmental):
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
-    def native_value(self) -> Optional[float]:  # type: ignore[override]
+    def native_value(self) -> Optional[int]:  # type: ignore[override]
         """Return the state of the sensor."""
-        if (value := self._device.particulate_matter_2_5) >= 0:  # type: ignore[attr-defined]
-            return value
+        try:
+            if (value := self._device.particulate_matter_2_5) is not None and value >= 0:  # type: ignore[attr-defined]
+                return int(value)
+        except (AttributeError, TypeError, ValueError):
+            pass
         return None
 
     @property
     def available(self) -> bool:
         """Return available only if device not in off, init or failed states."""
-        return isinstance(self._device.particulate_matter_2_5, (int, float))  # type: ignore[attr-defined]
+        try:
+            # For basic purifiers, PM sensors should always be available
+            from .vendor.libdyson.dyson_basic_purifier_fan import DysonBasicPurifierFan
+
+            if isinstance(self._device, DysonBasicPurifierFan):
+                return True
+
+            value = self._device.particulate_matter_2_5  # type: ignore[attr-defined]
+            return value is not None and isinstance(value, (int, float))
+        except (AttributeError, TypeError):
+            return False
 
 
 class DysonPM10Sensor(DysonSensorEnvironmental):
@@ -342,14 +362,27 @@ class DysonPM10Sensor(DysonSensorEnvironmental):
     @property
     def native_value(self) -> Optional[int]:  # type: ignore[override]
         """Return the state of the sensor."""
-        if (value := self._device.particulate_matter_10) >= 0:  # type: ignore[attr-defined]
-            return value
+        try:
+            if (value := self._device.particulate_matter_10) is not None and value >= 0:  # type: ignore[attr-defined]
+                return int(value)
+        except (AttributeError, TypeError, ValueError):
+            pass
         return None
 
     @property
     def available(self) -> bool:
         """Return available only if device not in off, init or failed states."""
-        return isinstance(self._device.particulate_matter_10, (int, float))  # type: ignore[attr-defined]
+        try:
+            # For basic purifiers, PM sensors should always be available
+            from .vendor.libdyson.dyson_basic_purifier_fan import DysonBasicPurifierFan
+
+            if isinstance(self._device, DysonBasicPurifierFan):
+                return True
+
+            value = self._device.particulate_matter_10  # type: ignore[attr-defined]
+            return value is not None and isinstance(value, (int, float))
+        except (AttributeError, TypeError):
+            return False
 
 
 class DysonParticulatesSensor(DysonSensorEnvironmental):
