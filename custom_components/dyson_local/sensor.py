@@ -203,7 +203,15 @@ class DysonFilterLifeSensorPercentage(DysonSensor):
     @property
     def native_value(self) -> float:
         """Return the state of the sensor calculated to a %."""
-        return (self._device.filter_life / PURE_COOL_LINK_FILTER_LIFE_MAX_HOURS) * 100
+        if PURE_COOL_LINK_FILTER_LIFE_MAX_HOURS <= 0:
+            # Avoid division by zero or negative values
+            return 0.0
+        if self._device.filter_life < 0:
+            # Ensure filter life is non-negative
+            return 0.0
+        percentage = (self._device.filter_life / PURE_COOL_LINK_FILTER_LIFE_MAX_HOURS) * 100
+        # Cap the percentage at 100%
+        return min(percentage, 100.0)
 
 
 class DysonCarbonFilterLifeSensor(DysonSensor):
