@@ -38,6 +38,7 @@ from .discovery import DysonDiscovery  # noqa: F401
 from .dyson_360_eye import Dyson360Eye
 from .dyson_360_heurist import Dyson360Heurist
 from .dyson_360_vis_nav import Dyson360VisNav
+from .dyson_basic_purifier_fan import DysonBasicPurifierFanWithOscillation
 from .dyson_device import DysonDevice
 from .dyson_pure_cool import DysonPureCool
 from .dyson_pure_cool_link import DysonPureCoolLink
@@ -73,9 +74,15 @@ def get_device(serial: str, credential: str, device_type: str) -> Optional[Dyson
         return DysonPureCoolLink(serial, credential, device_type)
     if device_type in [
         DEVICE_TYPE_PURE_COOL,
-        DEVICE_TYPE_PURIFIER_COOL_K,  # Deprecated - backward compatibility
-        DEVICE_TYPE_PURIFIER_COOL_E,  # Deprecated - backward compatibility
-        DEVICE_TYPE_PURIFIER_COOL_M,  # Deprecated - backward compatibility
+        DEVICE_TYPE_PURIFIER_COOL_K,  # 438K - Basic purifier without advanced sensors
+        DEVICE_TYPE_PURIFIER_COOL_E,  # 438E - Basic purifier without advanced sensors
+        DEVICE_TYPE_PURIFIER_COOL_M,  # 438M - Basic purifier without advanced sensors
+    ]:
+        _LOGGER.debug(
+            "Creating DysonBasicPurifierFanWithOscillation device for 438 series"
+        )
+        return DysonBasicPurifierFanWithOscillation(serial, credential, device_type)
+    if device_type in [
         DEVICE_TYPE_PURE_COOL_DESK,
     ]:
         _LOGGER.debug("Creating DysonPureCool device")
