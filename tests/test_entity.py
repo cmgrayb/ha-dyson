@@ -17,6 +17,7 @@ class TestDysonEntity:
         device = Mock()
         device.serial = "ABC-DEF-123"
         device.device_type = "438"
+        device.name = "Test Dyson Device"
         device.add_message_listener = Mock()
         device.remove_message_listener = Mock()
         device._callbacks = []

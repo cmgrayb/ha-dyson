@@ -13,6 +13,7 @@ from custom_components.dyson_local.const import (
     DATA_DEVICES,
     DOMAIN,
 )
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.core import HomeAssistant

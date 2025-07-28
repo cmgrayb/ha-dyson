@@ -18,7 +18,7 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -40,7 +40,9 @@ from .vendor.libdyson.dyson_basic_purifier_fan import DysonBasicPurifierFan
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: Callable
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: Callable[..., None],
 ) -> None:
     """Set up Dyson sensor from a config entry."""
     device = hass.data[DOMAIN][DATA_DEVICES][config_entry.entry_id]
@@ -50,7 +52,7 @@ async def async_setup_entry(
         or isinstance(device, Dyson360Heurist)
         or isinstance(device, Dyson360VisNav)
     ):
-        entities = [DysonBatterySensor(device, name)]
+        entities: list[SensorEntity] = [DysonBatterySensor(device, name)]
     else:
         coordinator = hass.data[DOMAIN][DATA_COORDINATORS][config_entry.entry_id]
         entities = []
@@ -67,7 +69,6 @@ async def async_setup_entry(
             entities.extend(
                 [
                     DysonFilterLifeSensor(device, name),
-                    DysonFilterLifeSensorPercentage(device, name),
                     DysonParticulatesSensor(coordinator, device, name),
                 ]
             )
@@ -107,7 +108,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class DysonSensor(SensorEntity, DysonEntity):  # type: ignore[misc]
+class DysonSensor(SensorEntity, DysonEntity):
     """Base class for a Dyson sensor."""
 
     _MESSAGE_TYPE = MessageType.STATE
@@ -119,17 +120,17 @@ class DysonSensor(SensorEntity, DysonEntity):  # type: ignore[misc]
         super().__init__(device, name)
 
     @property
-    def sub_name(self):
+    def sub_name(self) -> str | None:
         """Return the name of the Dyson sensor."""
         return self._SENSOR_NAME
 
     @property
-    def sub_unique_id(self):
+    def sub_unique_id(self) -> str | None:
         """Return the sensor's unique id."""
         return self._SENSOR_TYPE
 
 
-class DysonSensorEnvironmental(CoordinatorEntity, DysonSensor):  # type: ignore[misc]
+class DysonSensorEnvironmental(CoordinatorEntity, DysonSensor):
     """Dyson environmental sensor."""
 
     _MESSAGE_TYPE = MessageType.ENVIRONMENTAL
@@ -164,9 +165,9 @@ class DysonBatterySensor(DysonSensor):
     _attr_native_unit_of_measurement = PERCENTAGE
 
     @property
-    def native_value(self) -> int:  # type: ignore[override]
+    def native_value(self) -> int:
         """Return the state of the sensor."""
-        return self._device.battery_level  # type: ignore[attr-defined]
+        return self._device.battery_level  # type: ignore[attr-defined, no-any-return]
 
 
 class DysonFilterLifeSensor(DysonSensor):
@@ -179,7 +180,7 @@ class DysonFilterLifeSensor(DysonSensor):
     _attr_native_unit_of_measurement = UnitOfTime.HOURS
 
     @property
-    def native_value(self) -> int:  # type: ignore[override]
+    def native_value(self) -> int:
         """Return the state of the sensor."""
         return self._device.filter_life  # type: ignore[attr-defined]
 
@@ -212,7 +213,7 @@ class DysonCarbonFilterLifeSensor(DysonSensor):
     @property
     def native_value(self) -> int:  # type: ignore[override]
         """Return the state of the sensor."""
-        return self._device.carbon_filter_life  # type: ignore[attr-defined]
+        return self._device.carbon_filter_life  # type: ignore[attr-defined, no-any-return]
 
 
 class DysonHEPAFilterLifeSensor(DysonSensor):
@@ -225,9 +226,9 @@ class DysonHEPAFilterLifeSensor(DysonSensor):
     _attr_native_unit_of_measurement = PERCENTAGE
 
     @property
-    def native_value(self) -> int:  # type: ignore[override]
+    def native_value(self) -> int:
         """Return the state of the sensor."""
-        return self._device.hepa_filter_life  # type: ignore[attr-defined]
+        return self._device.hepa_filter_life  # type: ignore[attr-defined, no-any-return]
 
 
 class DysonCombinedFilterLifeSensor(DysonSensor):
