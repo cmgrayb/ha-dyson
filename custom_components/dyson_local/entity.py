@@ -26,9 +26,9 @@ class DysonEntity(Entity):
         """Initialize the entity."""
         self._device = device
         self._name = name
-        self._last_oscillation_state: Optional[
-            dict[str, Any]
-        ] = None  # Track the last known oscillation state
+        self._last_oscillation_state: Optional[dict[str, Any]] = (
+            None  # Track the last known oscillation state
+        )
 
         # Set attributes to avoid property override issues
         self._attr_should_poll = False

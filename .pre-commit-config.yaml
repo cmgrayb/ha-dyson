@@ -6,7 +6,7 @@ repos:
   #     - id: pyupgrade
   #       args: [--py38-plus]
   - repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 25.1.0
     hooks:
       - id: black
         args:
@@ -24,7 +24,7 @@ repos:
   #       exclude_types: [csv, json]
   #       exclude: ^tests/fixtures/
   - repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
+    rev: 7.3.0
     hooks:
       - id: flake8
         args: ["--ignore=E501,W503"]

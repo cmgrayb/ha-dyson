@@ -209,7 +209,9 @@ class DysonFilterLifeSensorPercentage(DysonSensor):
         if self._device.filter_life < 0:
             # Ensure filter life is non-negative
             return 0.0
-        percentage = (self._device.filter_life / PURE_COOL_LINK_FILTER_LIFE_MAX_HOURS) * 100
+        percentage = (
+            self._device.filter_life / PURE_COOL_LINK_FILTER_LIFE_MAX_HOURS
+        ) * 100
         # Cap the percentage at 100%
         return min(percentage, 100.0)
 

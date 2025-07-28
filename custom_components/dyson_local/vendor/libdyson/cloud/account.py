@@ -7,6 +7,7 @@ import requests
 from requests.auth import AuthBase, HTTPBasicAuth
 
 from ..exceptions import (
+    DysonAPIProvisionFailure,
     DysonAuthRequired,
     DysonInvalidAccountStatus,
     DysonInvalidAuth,
@@ -14,9 +15,7 @@ from ..exceptions import (
     DysonNetworkError,
     DysonOTPTooFrequently,
     DysonServerError,
-    DysonAPIProvisionFailure,
 )
-
 from .device_info import DysonDeviceInfo
 
 DYSON_API_HOST = "https://appapi.cp.dyson.com"

@@ -21,6 +21,7 @@ from .vendor.libdyson import (
     WaterHardness,
 )
 from .vendor.libdyson.const import AirQualityTarget
+from .vendor.libdyson.dyson_advanced_oscillation_fan import DysonAdvancedOscillationFan
 from .vendor.libdyson.dyson_basic_purifier_fan import (
     DysonBasicPurifierFanWithOscillation,
 )
@@ -97,8 +98,10 @@ async def async_setup_entry(
         device, DysonPureCoolLink
     ):
         entities.append(DysonAirQualitySelect(device, name))
-    if isinstance(device, DysonPureCool) or isinstance(
-        device, DysonBasicPurifierFanWithOscillation
+    if (
+        isinstance(device, DysonPureCool)
+        or isinstance(device, DysonBasicPurifierFanWithOscillation)
+        or isinstance(device, DysonAdvancedOscillationFan)
     ):
         entities.append(DysonOscillationRangeSelect(device, name))
     if isinstance(device, DysonPurifierHumidifyCool):
