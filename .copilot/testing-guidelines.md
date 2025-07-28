@@ -8,6 +8,16 @@ This document provides specific guidelines for testing the Dyson Home Assistant 
 
 **Always use terminal commands directly instead of VSCode tasks** for testing and quality checks. VSCode task outputs are not accessible for validation.
 
+### 🚀 Quick Start: Pre-Push Preparation
+
+For convenience, there's a VSCode task that runs the complete pre-push sequence:
+
+**VSCode Task: "Prepare for Push (Pre-commit Ready)"**
+- Access via Command Palette: `Ctrl+Shift+P` → "Tasks: Run Task" → "Prepare for Push (Pre-commit Ready)"
+- Runs: Flake8 → isort → pytest → Black (in that order)
+- Provides clear status indicators for each step
+- Stops on first failure for immediate feedback
+
 ## 🔧 Quality Check Commands
 
 ### Code Quality

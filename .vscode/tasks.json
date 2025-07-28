@@ -1,0 +1,167 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Install Development Dependencies",
+            "type": "shell",
+            "command": "pip install -r requirements-dev.txt",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Flake8",
+            "type": "shell",
+            "command": "flake8 custom_components/dyson_local/",
+            "group": "test",
+            "problemMatcher": "$python"
+        },
+        {
+            "label": "Run Black (Check)",
+            "type": "shell",
+            "command": "black --check custom_components/dyson_local/",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Black (Format)",
+            "type": "shell",
+            "command": "black custom_components/dyson_local/",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run isort (Check)",
+            "type": "shell",
+            "command": "isort --check-only custom_components/dyson_local/",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run isort (Format)",
+            "type": "shell",
+            "command": "isort custom_components/dyson_local/",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run mypy",
+            "type": "shell",
+            "command": "mypy custom_components/dyson_local/",
+            "group": "test",
+            "problemMatcher": "$python"
+        },
+        {
+            "label": "Run bandit",
+            "type": "shell",
+            "command": "bandit -r custom_components/dyson_local/",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run All Quality Checks",
+            "type": "shell",
+            "command": "flake8 custom_components/dyson_local/ && black --check custom_components/dyson_local/ && isort --check-only custom_components/dyson_local/ && mypy custom_components/dyson_local/ && bandit -r custom_components/dyson_local/",
+            "group": "test",
+            "problemMatcher": "$python"
+        },
+        {
+            "label": "Format All Code",
+            "type": "shell",
+            "command": "black custom_components/dyson_local/ && isort custom_components/dyson_local/",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Tests",
+            "type": "shell",
+            "command": "pytest tests/ -v",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Install Pre-commit Hooks",
+            "type": "shell",
+            "command": "pre-commit install",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Pre-commit on All Files",
+            "type": "shell",
+            "command": "pre-commit run --all-files",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Start Home Assistant Development",
+            "type": "shell",
+            "command": "hass --config ./config --debug",
+            "group": "build",
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Create HA Config Directory",
+            "type": "shell",
+            "command": "mkdir -p config/custom_components && ln -sf $(pwd)/custom_components/dyson_local config/custom_components/dyson_local",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Validate Home Assistant Config",
+            "type": "shell",
+            "command": "hass --config ./config --script check_config",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Start Home Assistant (Development)",
+            "type": "shell",
+            "command": "hass",
+            "args": ["-c", "/workspaces/config", "--debug"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^.*Starting Home Assistant.*$",
+                    "endsPattern": "^.*Home Assistant initialized.*$"
+                }
+            }
+        },
+        {
+            "label": "Prepare for Push (Pre-commit Ready)",
+            "type": "shell",
+            "command": "echo '🚀 Preparing code for push...' && echo '1️⃣ Running Flake8...' && flake8 custom_components/dyson_local/ && echo '✅ Flake8 passed' && echo '2️⃣ Running isort...' && isort custom_components/dyson_local/ && echo '✅ isort completed' && echo '3️⃣ Running tests...' && pytest tests/ -v --tb=short && echo '✅ All tests passed' && echo '4️⃣ Running Black...' && black custom_components/dyson_local/ && echo '✅ Black formatting applied' && echo '🎉 Code is ready for push and pre-commit!'",
+            "group": "build",
+            "problemMatcher": [
+                "$python"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        }
+    ]
+}
