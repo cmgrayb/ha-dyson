@@ -21,6 +21,8 @@ class TestDysonEntity:
         device.add_message_listener = Mock()
         device.remove_message_listener = Mock()
         device._callbacks = []
+        # Explicitly delete 'name' attribute so getattr() falls back to entity name
+        del device.name
         return device
 
     @pytest.fixture

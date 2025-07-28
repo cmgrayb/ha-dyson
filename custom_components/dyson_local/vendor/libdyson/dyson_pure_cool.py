@@ -1,12 +1,9 @@
 """Dyson Pure Cool fan."""
 
-import logging
 from abc import abstractmethod
 from typing import Optional
 
 from .dyson_device import DysonFanDevice
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class DysonPureCoolBase(DysonFanDevice):
@@ -58,12 +55,18 @@ class DysonPureCoolBase(DysonFanDevice):
     @property
     def particulate_matter_2_5(self):
         """Return PM 2.5 in micro grams per cubic meter."""
-        return int(self._get_environmental_field_value("p25r") or self._get_environmental_field_value("pm25"))
+        return int(
+            self._get_environmental_field_value("p25r")
+            or self._get_environmental_field_value("pm25")
+        )
 
     @property
     def particulate_matter_10(self):
         """Return PM 2.5 in micro grams per cubic meter."""
-        return int(self._get_environmental_field_value("p10r") or self._get_environmental_field_value("pm10"))
+        return int(
+            self._get_environmental_field_value("p10r")
+            or self._get_environmental_field_value("pm10")
+        )
 
     @property
     def volatile_organic_compounds(self) -> float:
@@ -77,12 +80,10 @@ class DysonPureCoolBase(DysonFanDevice):
 
     def turn_on(self) -> None:
         """Turn on the device."""
-        _LOGGER.debug("turn_on() called for device %s", self.serial)
         self._set_configuration(fpwr="ON")
 
     def turn_off(self) -> None:
         """Turn off the device."""
-        _LOGGER.debug("turn_off() called for device %s", self.serial)
         self._set_configuration(fpwr="OFF")
 
     def _set_speed(self, speed: int) -> None:
@@ -145,7 +146,6 @@ class DysonPureCool(DysonPureCoolBase):
         angle_high: Optional[int] = None,
     ) -> None:
         """Turn on oscillation."""
-        _LOGGER.debug("enable_oscillation() called for device %s with angles %s, %s", self.serial, angle_low, angle_high)
         if angle_low is None:
             angle_low = self.oscillation_angle_low
         if angle_high is None:
@@ -165,7 +165,6 @@ class DysonPureCool(DysonPureCoolBase):
             oson = "OION"
         else:
             oson = "ON"
-        _LOGGER.debug("Setting oscillation config for device %s: oson=%s, angle_low=%s, angle_high=%s", self.serial, oson, angle_low, angle_high)
         self._set_configuration(
             oson=oson,
             fpwr="ON",
@@ -176,11 +175,9 @@ class DysonPureCool(DysonPureCoolBase):
 
     def disable_oscillation(self) -> None:
         """Turn off oscillation."""
-        _LOGGER.debug("disable_oscillation() called for device %s", self.serial)
         current_oscillation_raw = self._get_field_value(self._status, "oson")
         if current_oscillation_raw in ["OION", "OIOF"]:
             oson = "OIOF"
         else:
             oson = "OFF"
-        _LOGGER.debug("Setting oson=%s for device %s", oson, self.serial)
         self._set_configuration(oson=oson)

@@ -31,27 +31,7 @@ from .vendor.libdyson.cloud import (
     DysonDeviceInfo,
 )
 
-# Import device type constants for mapping
-from .vendor.libdyson.const import (
-    DEVICE_TYPE_360_EYE,
-    DEVICE_TYPE_360_HEURIST,
-    DEVICE_TYPE_360_VIS_NAV,
-    DEVICE_TYPE_PURE_COOL,
-    DEVICE_TYPE_PURE_COOL_DESK,
-    DEVICE_TYPE_PURE_COOL_LINK,
-    DEVICE_TYPE_PURE_COOL_LINK_DESK,
-    DEVICE_TYPE_PURE_HOT_COOL,
-    DEVICE_TYPE_PURE_HOT_COOL_LINK,
-    DEVICE_TYPE_PURE_HUMIDIFY_COOL,
-    DEVICE_TYPE_PURIFIER_BIG_QUIET,
-    DEVICE_TYPE_PURIFIER_COOL_E,
-    DEVICE_TYPE_PURIFIER_COOL_K,
-    DEVICE_TYPE_PURIFIER_COOL_M,
-    DEVICE_TYPE_PURIFIER_HOT_COOL_E,
-    DEVICE_TYPE_PURIFIER_HOT_COOL_K,
-    DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_E,
-    DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K,
-)
+# Note: Enhanced device detection now handles device type mapping automatically
 from .vendor.libdyson.discovery import DysonDiscovery
 from .vendor.libdyson.exceptions import (
     DysonException,
@@ -80,75 +60,8 @@ SETUP_METHODS = {
 }
 
 
-# Mapping from cloud API ProductType to internal device type codes
-CLOUD_PRODUCT_TYPE_TO_DEVICE_TYPE = {
-    # 360 Eye robot vacuum
-    "360 Eye": DEVICE_TYPE_360_EYE,
-    "360EYE": DEVICE_TYPE_360_EYE,
-    "N223": DEVICE_TYPE_360_EYE,
-    # 360 Heurist robot vacuum
-    "360 Heurist": DEVICE_TYPE_360_HEURIST,
-    "360HEURIST": DEVICE_TYPE_360_HEURIST,
-    "276": DEVICE_TYPE_360_HEURIST,
-    # 360 Vis Nav robot vacuum
-    "360 Vis Nav": DEVICE_TYPE_360_VIS_NAV,
-    "360VIS": DEVICE_TYPE_360_VIS_NAV,
-    "277": DEVICE_TYPE_360_VIS_NAV,
-    # Pure Cool Link models
-    "TP02": DEVICE_TYPE_PURE_COOL_LINK,
-    "TP01": DEVICE_TYPE_PURE_COOL_LINK,
-    "DP01": DEVICE_TYPE_PURE_COOL_LINK_DESK,
-    "DP02": DEVICE_TYPE_PURE_COOL_LINK_DESK,
-    "475": DEVICE_TYPE_PURE_COOL_LINK,
-    "469": DEVICE_TYPE_PURE_COOL_LINK_DESK,
-    # Pure Cool models
-    "TP04": DEVICE_TYPE_PURE_COOL,
-    "AM06": DEVICE_TYPE_PURE_COOL_DESK,
-    "438": DEVICE_TYPE_PURE_COOL,  # Older TP04 devices (when no variant field)
-    "520": DEVICE_TYPE_PURE_COOL_DESK,
-    # Purifier Cool models (newer) - specific model mappings for better compatibility
-    "TP07": DEVICE_TYPE_PURIFIER_COOL_K,  # TP07 typically K series
-    "TP09": DEVICE_TYPE_PURIFIER_COOL_K,  # TP09 typically K series
-    "TP11": DEVICE_TYPE_PURIFIER_COOL_M,  # TP11 is M series
-    "PC1": DEVICE_TYPE_PURIFIER_COOL_M,  # PC1 is M series
-    # Variant combinations for Cool series
-    "438K": DEVICE_TYPE_PURIFIER_COOL_K,
-    "438E": DEVICE_TYPE_PURIFIER_COOL_E,
-    "438M": DEVICE_TYPE_PURIFIER_COOL_M,
-    # Pure Hot+Cool Link models
-    "HP02": DEVICE_TYPE_PURE_HOT_COOL_LINK,
-    "455": DEVICE_TYPE_PURE_HOT_COOL_LINK,
-    # Pure Hot+Cool models
-    "HP04": DEVICE_TYPE_PURE_HOT_COOL,
-    "527": DEVICE_TYPE_PURE_HOT_COOL,  # Older HP04 devices (when no variant field)
-    # Purifier Hot+Cool models (newer) - specific model mappings for better compatibility
-    "HP07": DEVICE_TYPE_PURIFIER_HOT_COOL_K,  # HP07 typically K series
-    "HP09": DEVICE_TYPE_PURIFIER_HOT_COOL_K,  # HP09 typically K series
-    # Variant combinations for Hot+Cool series
-    "527K": DEVICE_TYPE_PURIFIER_HOT_COOL_K,
-    "527E": DEVICE_TYPE_PURIFIER_HOT_COOL_E,
-    "527M": DEVICE_TYPE_PURIFIER_HOT_COOL_K,  # HP series doesn't have M variant, map to K
-    # Pure Humidify+Cool models
-    "PH01": DEVICE_TYPE_PURE_HUMIDIFY_COOL,
-    "PH02": DEVICE_TYPE_PURE_HUMIDIFY_COOL,
-    "358": DEVICE_TYPE_PURE_HUMIDIFY_COOL,  # Older PH01/PH02 devices (when no variant field)
-    # Purifier Humidify+Cool models (newer) - specific model mappings for better compatibility
-    "PH03": DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K,  # PH03 typically K series
-    "PH04": DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K,  # PH04 typically K series
-    # Variant combinations for Humidify+Cool series
-    "358K": DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K,
-    "358E": DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_E,
-    "358M": DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K,  # PH series doesn't have M variant, map to K
-    # Purifier Big+Quiet models
-    "BP02": DEVICE_TYPE_PURIFIER_BIG_QUIET,
-    "BP03": DEVICE_TYPE_PURIFIER_BIG_QUIET,
-    "BP04": DEVICE_TYPE_PURIFIER_BIG_QUIET,
-    "664": DEVICE_TYPE_PURIFIER_BIG_QUIET,
-}
-
-
-# Note: We use the mapping function from device_info.py instead of duplicating it here
-# to ensure consistent behavior and proper variant handling
+# Note: Device type detection is now handled by enhanced MQTT detection
+# in device_info.get_mqtt_device_type() instead of manual mapping
 
 
 class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -463,14 +376,14 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
         if info is not None:
             assert self._device_info is not None  # Should be set by discovery step
-            # Use the device info's built-in mapping method which handles variants properly
-            device_type = self._device_info.get_device_type()
+            # Use the enhanced MQTT device type detection which handles all variants properly
+            device_type = self._device_info.get_mqtt_device_type()
 
             _LOGGER.debug(
-                "Cloud ProductType: %s, variant: %s, Mapped to: %s",
+                "Cloud ProductType: %s, Enhanced MQTT device type: %s, Debug info: %s",
                 self._device_info.product_type,
-                getattr(self._device_info, "variant", None),
                 device_type,
+                self._device_info.debug_info(),
             )
             _LOGGER.debug(
                 "Device info object has variant attribute: %s",

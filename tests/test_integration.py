@@ -5,7 +5,15 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from custom_components.dyson_local import async_setup_entry, async_unload_entry
-from custom_components.dyson_local.const import DATA_COORDINATORS, DATA_DEVICES, DOMAIN
+from custom_components.dyson_local.const import (
+    CONF_CREDENTIAL,
+    CONF_DEVICE_TYPE,
+    CONF_SERIAL,
+    DATA_COORDINATORS,
+    DATA_DEVICES,
+    DOMAIN,
+)
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.core import HomeAssistant
@@ -51,9 +59,9 @@ class TestDysonLocalIntegration:
         entry.data = {
             CONF_HOST: "192.168.1.100",
             CONF_NAME: "Test Dyson Device",
-            "serial": "ABC-DEF-123",
-            "credential": "test_credential",
-            "device_type": "520",
+            CONF_SERIAL: "ABC-DEF-123",
+            CONF_CREDENTIAL: "test_credential",
+            CONF_DEVICE_TYPE: "520",
         }
         entry.options = {}
         return entry
@@ -141,6 +149,9 @@ class TestDysonLocalIntegration:
     def test_device_registry_integration(self, mock_device):
         """Test device registry information."""
         from custom_components.dyson_local.entity import DysonEntity
+
+        # Ensure the mock device name is properly accessible
+        mock_device.configure_mock(name="Test Dyson Device")
 
         entity = DysonEntity(mock_device, "Test Entity")
         device_info = entity.device_info
