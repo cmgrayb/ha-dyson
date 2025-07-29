@@ -80,13 +80,15 @@
         "data": {
           "auto_discovery": "Enable newly added entities",
           "enable_polling": "Enable polling for changes",
+          "progressive_discovery": "Experimental: Progressive Discovery",
           "cloud_poll_interval": "Cloud polling interval (seconds)"
         },
         "description": "Configure auto-discovery and polling settings. The current polling interval is {current_interval} minutes."
       },
       "local_options": {
         "data": {
-          "enable_polling": "Enable polling for changes"
+          "enable_polling": "Enable polling for changes",
+          "progressive_discovery": "Experimental: Progressive Discovery"
         },
         "description": "Configure polling settings for direct device connection."
       }
