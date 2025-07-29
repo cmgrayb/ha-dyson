@@ -1,5 +1,6 @@
 """Progressive discovery manager for Dyson devices."""
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
@@ -59,7 +60,7 @@ class ProgressiveDiscoveryManager:
             hasattr(self.device, "add_message_listener")
             and not self._message_listener_added
         ):
-            self.device.add_message_listener(self._on_mqtt_message)
+            self.device.add_message_listener(self._on_mqtt_message_sync)
             self._message_listener_added = True
             self._logger.debug("Added MQTT message listener for progressive discovery")
 
@@ -82,7 +83,7 @@ class ProgressiveDiscoveryManager:
             hasattr(self.device, "remove_message_listener")
             and self._message_listener_added
         ):
-            self.device.remove_message_listener(self._on_mqtt_message)
+            self.device.remove_message_listener(self._on_mqtt_message_sync)
             self._message_listener_added = False
             self._logger.debug("Removed MQTT message listener")
 
@@ -96,6 +97,14 @@ class ProgressiveDiscoveryManager:
         # Ensure monitoring is stopped
         if self._monitoring:
             await self.stop_monitoring()
+
+    def _on_mqtt_message_sync(self, message: Dict[str, Any]) -> None:
+        """Synchronous wrapper for MQTT message handling."""
+        # Schedule the async function to run in the event loop
+        if self.hass and self.hass.loop:
+            asyncio.run_coroutine_threadsafe(
+                self._on_mqtt_message(message), self.hass.loop
+            )
 
     async def _on_mqtt_message(self, message: Dict[str, Any]) -> None:
         """Handle incoming MQTT messages for capability discovery."""

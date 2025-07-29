@@ -723,7 +723,9 @@ class DysonOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
+        # Note: self.config_entry is automatically set by Home Assistant
+        # Explicit assignment is deprecated as of HA 2025.12
+        pass
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""

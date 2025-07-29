@@ -9,6 +9,7 @@ from custom_components.dyson_local.const import DATA_COORDINATORS, DATA_DEVICES,
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 
 
 class TestDysonLocalIntegration:
@@ -137,7 +138,6 @@ class TestDysonLocalIntegration:
         from custom_components.dyson_local.vendor.libdyson.exceptions import (
             DysonException,
         )
-        from homeassistant.exceptions import ConfigEntryNotReady
 
         mock_device.connect = Mock(side_effect=DysonException("Connection failed"))
 
@@ -147,14 +147,24 @@ class TestDysonLocalIntegration:
 
         mock_hass.async_add_executor_job = execute_for_failure
 
+        # Mock config_entries.async_entries to return empty list for cloud API fallback
+        mock_hass.config_entries.async_entries = Mock(return_value=[])
+
         with patch(
             "custom_components.dyson_local.vendor.libdyson.get_device_with_progressive_discovery",
             return_value=mock_device,
         ):
+            # Mock discovery manager to fail properly
+            mock_discovery_manager = Mock()
+            mock_discovery_manager.connect_with_discovery = AsyncMock(
+                side_effect=ConfigEntryNotReady("Discovery failed")
+            )
+
             with patch(
-                "custom_components.dyson_local.discovery_manager.DysonDiscoveryManager"
+                "custom_components.dyson_local.discovery_manager.DysonDiscoveryManager",
+                return_value=mock_discovery_manager,
             ):
-                # Don't mock the connection handler, let it fail naturally
+                # All fallback methods should fail, resulting in ConfigEntryNotReady
                 with pytest.raises(ConfigEntryNotReady):
                     await async_setup_entry(mock_hass, mock_config_entry)
 
