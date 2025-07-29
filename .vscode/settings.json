@@ -1,0 +1,97 @@
+{
+    // Python settings
+    "python.defaultInterpreterPath": "./.venv/bin/python",
+
+    // Linting settings
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.mypyEnabled": true,
+    "python.linting.banditEnabled": true,
+    "python.linting.flake8Args": ["--config=setup.cfg"],
+    "python.linting.mypyArgs": [
+        "--strict",
+        "--show-error-codes",
+        "--config-file=setup.cfg"
+    ],
+
+    // Formatting settings
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": ["--line-length", "88"],
+
+    // Import sorting
+    "python.sortImports.args": ["--profile", "black"],
+    "isort.args": ["--profile", "black"],
+
+    // Testing settings
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestArgs": ["tests"],
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+
+    // Editor settings
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "editor.rulers": [88],
+
+    // File associations
+    "files.associations": {
+        "*.yaml": "yaml",
+        "*.yml": "yaml",
+        "configuration.yaml": "home-assistant",
+        "automations.yaml": "home-assistant",
+        "scripts.yaml": "home-assistant",
+        "scenes.yaml": "home-assistant"
+    },
+
+    // Exclude patterns
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.pytest_cache": true,
+        "**/.mypy_cache": true,
+        "**/.coverage": true,
+        "**/htmlcov": true
+    },
+
+    // Search exclude patterns
+    "search.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.pytest_cache": true,
+        "**/.mypy_cache": true
+    },
+
+    // Terminal settings
+    "terminal.integrated.defaultProfile.linux": "bash",
+
+    // Git settings
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false,
+
+    // IntelliSense settings
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.extraPaths": [
+        "custom_components",
+        "./.venv/lib/python3.12/site-packages"
+    ],
+
+    // Mypy extension settings
+    "mypy-type-checker.importStrategy": "fromEnvironment",
+    "mypy-type-checker.args": [
+        "--strict",
+        "--config-file=setup.cfg"
+    ],
+
+    // Home Assistant specific settings
+    "yaml.schemas": {
+        "https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/helpers/config_validation.py": [
+            "configuration.yaml",
+            "*.config.yaml"
+        ]
+    }
+}

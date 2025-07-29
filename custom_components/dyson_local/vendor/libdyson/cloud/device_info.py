@@ -203,7 +203,42 @@ def map_product_type_to_device_type(
 
 
 class DysonDeviceInfo:
-    """Dyson device info."""
+    """Dyson device info with complete OpenAPI field support."""
+
+    # Core required fields (existing)
+    serial: str
+    name: str
+    version: str
+    credential: str
+    auto_update: bool
+    new_version_available: bool
+    product_type: str
+
+    # Optional legacy field
+    active: Optional[bool] = None
+
+    # OpenAPI Device schema fields
+    category: Optional[str] = None  # ec, flrc, hc, light, robot, wearable
+    connection_category: Optional[str] = (
+        None  # lecAndWifi, lecOnly, nonConnected, wifiOnly
+    )
+    model: Optional[str] = None  # Actual model number (TP04, HP07, etc.)
+    type: Optional[str] = None  # MQTT topic prefix (438, 527, etc.)
+    variant: Optional[str] = None  # Regional variant (K, E, M, etc.)
+
+    # ConnectedConfiguration fields
+    firmware_auto_update_enabled: Optional[bool] = None
+    firmware_new_version_available: Optional[bool] = None
+    firmware_version: Optional[str] = None
+    firmware_capabilities: Optional[list] = None
+
+    # MQTT configuration fields
+    mqtt_local_broker_credentials: Optional[str] = None
+    mqtt_root_topic_level: Optional[str] = None
+    mqtt_remote_broker_type: Optional[str] = None
+
+    # Raw data for debugging/future expansion
+    raw_data: Optional[dict] = None
 
     def __init__(
         self,

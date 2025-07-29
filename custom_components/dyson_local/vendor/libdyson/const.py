@@ -1,4 +1,4 @@
-"""Constants for Dyson Python library."""
+"""Constants for Dyson Python library - Simplified for MQTT-focused usage."""
 
 from enum import Enum, auto
 
