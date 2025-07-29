@@ -97,12 +97,14 @@ class ProgressiveDiscoveryManager:
         # Ensure monitoring is stopped
         if self._monitoring:
             # Use asyncio to run the async stop_monitoring method
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
+            try:
+                loop = asyncio.get_running_loop()
                 # Schedule the cleanup for later if loop is running
                 loop.create_task(self.stop_monitoring())
-            else:
-                # Run it directly if no loop is running
+            except RuntimeError:
+                # No running loop, create a new one
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
                 loop.run_until_complete(self.stop_monitoring())
 
     async def _on_mqtt_message(self, message: Dict[str, Any]) -> None:
