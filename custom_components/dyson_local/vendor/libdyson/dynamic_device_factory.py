@@ -47,6 +47,14 @@ class DynamicDeviceFactory:
             Appropriate device instance or None if creation fails
         """
 
+        # For modern devices without MQTT data, default to progressive mode behavior
+        if (
+            not status_data
+            and not environmental_data
+            and device_type in ["438M", "438E", "438K"]
+        ):
+            progressive_mode = True
+
         # If we don't have data to analyze, fall back to static mapping
         if not status_data and not environmental_data:
             if progressive_mode:

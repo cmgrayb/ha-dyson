@@ -225,7 +225,9 @@ def get_device_with_progressive_discovery(
             )
             if device:
                 # Set up progressive discovery monitoring
-                from ..progressive_discovery import ProgressiveDiscoveryManager
+                from custom_components.dyson_local.progressive_discovery import (
+                    ProgressiveDiscoveryManager,
+                )
 
                 discovery_manager = ProgressiveDiscoveryManager(hass, device, entry)
                 # Store the discovery manager on the device for later cleanup
