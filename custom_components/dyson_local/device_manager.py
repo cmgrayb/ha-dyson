@@ -183,6 +183,16 @@ class DysonDeviceManager:
                 f"with device type {entry.data[CONF_DEVICE_TYPE]}"
             )
 
+        # Start progressive discovery monitoring if available
+        if hasattr(device, "_progressive_discovery_manager"):
+            discovery_manager = device._progressive_discovery_manager
+            if discovery_manager:
+                _LOGGER.debug(
+                    "Starting progressive discovery monitoring for device %s",
+                    device.serial,
+                )
+                self.hass.async_create_task(discovery_manager.start_monitoring())
+
         # Validate that device has required attributes
         if not hasattr(device, "disconnect") or not hasattr(device, "serial"):
             _LOGGER.error(
