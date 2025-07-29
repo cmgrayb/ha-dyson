@@ -96,20 +96,7 @@ class ProgressiveDiscoveryManager:
 
         # Ensure monitoring is stopped
         if self._monitoring:
-            # Use asyncio to run the async stop_monitoring method
-            try:
-                loop = asyncio.get_running_loop()
-                # Schedule the cleanup for later if loop is running
-                try:
-                    loop.create_task(self.stop_monitoring())
-                except RuntimeError as e:
-                    self._logger.warning(
-                        "Failed to create task for stop_monitoring: %s", str(e)
-                    )
-            except RuntimeError:
-                # No running loop, use asyncio.run to execute the coroutine
-                asyncio.run(self.stop_monitoring())
-
+            await self.stop_monitoring()
     async def _on_mqtt_message(self, message: Dict[str, Any]) -> None:
         """Handle incoming MQTT messages for capability discovery."""
         if not self._monitoring:
