@@ -103,8 +103,7 @@ def debug_mqtt_topic_determination(device_info: DysonDeviceInfo) -> dict:
             "serial": device_info.serial,
             "determined_mqtt_topic": mqtt_topic,
             "topic_source": debug_info["mqtt_source"],
-            "is_opendyson_approach": getattr(device_info, "mqtt_root_topic_level", None)
-            is not None,
+            "is_opendyson_approach": getattr(device_info, "mqtt_root_topic_level", None) is not None,
             "cloud_api_fields": {
                 "mqtt_root_topic_level": getattr(
                     device_info, "mqtt_root_topic_level", None
