@@ -107,10 +107,8 @@ class ProgressiveDiscoveryManager:
                         "Failed to create task for stop_monitoring: %s", str(e)
                     )
             except RuntimeError:
-                # No running loop, create a new one
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(self.stop_monitoring())
+                # No running loop, use asyncio.run to execute the coroutine
+                asyncio.run(self.stop_monitoring())
 
     async def _on_mqtt_message(self, message: Dict[str, Any]) -> None:
         """Handle incoming MQTT messages for capability discovery."""
