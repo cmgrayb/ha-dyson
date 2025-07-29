@@ -27,10 +27,14 @@ class TestDysonLocalIntegration:
                 hasattr(func, "__name__")
                 and func.__name__ == "get_device_with_progressive_discovery"
             ):
+                # Extract serial and device_type from kwargs for clarity and robustness
+                serial = kwargs.get("serial")
+                device_type = kwargs.get("device_type")
+
                 # Return a mock device for progressive discovery calls
                 device = Mock()
-                device.serial = args[0]  # First arg is serial
-                device.device_type = args[2]  # Third arg is device_type
+                device.serial = serial
+                device.device_type = device_type
                 device.name = "Test Dyson Device"
                 device.version = "1.0.0"
                 device.battery_level = 85
