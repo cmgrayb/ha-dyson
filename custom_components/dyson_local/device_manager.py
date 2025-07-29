@@ -173,8 +173,8 @@ class DysonDeviceManager:
             entry.data[CONF_SERIAL],
             entry.data[CONF_CREDENTIAL],
             entry.data[CONF_DEVICE_TYPE],
-            self.hass,  # Pass Home Assistant instance
-            entry,  # Pass config entry
+            hass=self.hass,  # Pass Home Assistant instance explicitly
+            entry=entry,  # Pass config entry explicitly
         )
 
         if device is None:
