@@ -74,6 +74,7 @@ async def async_setup_entry(
             entities.extend(
                 [
                     DysonFilterLifeSensor(device, name),
+                    DysonFilterLifeSensorPercentage(device, name),
                     DysonParticulatesSensor(coordinator, device, name),
                 ]
             )
@@ -212,6 +213,22 @@ class DysonFilterLifeSensorPercentage(DysonSensor):
         percentage = (self._device.filter_life / PURE_COOL_LINK_FILTER_LIFE_MAX_HOURS) * 100
         # Cap the percentage at 100%
         return min(percentage, 100.0)
+
+
+class DysonFilterLifeSensorPercentage(DysonSensor):
+    """Dyson filter life sensor (in percentage) for Pure Cool Link."""
+
+    _SENSOR_TYPE = "filter_life_percentage"
+    _SENSOR_NAME = "Filter Life Percentage"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:filter-outline"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_suggested_display_precision = 0
+
+    @property
+    def native_value(self) -> float:
+        """Return the state of the sensor calculated to a %."""
+        return (self._device.filter_life / 4300) * 100
 
 
 class DysonCarbonFilterLifeSensor(DysonSensor):
