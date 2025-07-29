@@ -736,8 +736,10 @@ class DysonOptionsFlowHandler(config_entries.OptionsFlow):
             from .const import (
                 CONF_CLOUD_POLL_INTERVAL,
                 CONF_ENABLE_POLLING,
+                CONF_PROGRESSIVE_DISCOVERY,
                 DEFAULT_CLOUD_POLL_INTERVAL,
                 DEFAULT_ENABLE_POLLING,
+                DEFAULT_PROGRESSIVE_DISCOVERY,
             )
 
             current_interval = self.config_entry.options.get(
@@ -749,6 +751,9 @@ class DysonOptionsFlowHandler(config_entries.OptionsFlow):
             current_enable_polling = self.config_entry.options.get(
                 CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
             )
+            current_progressive_discovery = self.config_entry.options.get(
+                CONF_PROGRESSIVE_DISCOVERY, DEFAULT_PROGRESSIVE_DISCOVERY
+            )
 
             return self.async_show_form(
                 step_id="init",
@@ -759,6 +764,10 @@ class DysonOptionsFlowHandler(config_entries.OptionsFlow):
                         ): bool,
                         vol.Optional(
                             CONF_ENABLE_POLLING, default=current_enable_polling
+                        ): bool,
+                        vol.Optional(
+                            CONF_PROGRESSIVE_DISCOVERY,
+                            default=current_progressive_discovery,
                         ): bool,
                         vol.Optional(
                             CONF_CLOUD_POLL_INTERVAL, default=current_interval
@@ -780,10 +789,18 @@ class DysonOptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        from .const import CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
+        from .const import (
+            CONF_ENABLE_POLLING,
+            CONF_PROGRESSIVE_DISCOVERY,
+            DEFAULT_ENABLE_POLLING,
+            DEFAULT_PROGRESSIVE_DISCOVERY,
+        )
 
         current_enable_polling = self.config_entry.options.get(
             CONF_ENABLE_POLLING, DEFAULT_ENABLE_POLLING
+        )
+        current_progressive_discovery = self.config_entry.options.get(
+            CONF_PROGRESSIVE_DISCOVERY, DEFAULT_PROGRESSIVE_DISCOVERY
         )
 
         return self.async_show_form(
@@ -792,6 +809,10 @@ class DysonOptionsFlowHandler(config_entries.OptionsFlow):
                 {
                     vol.Optional(
                         CONF_ENABLE_POLLING, default=current_enable_polling
+                    ): bool,
+                    vol.Optional(
+                        CONF_PROGRESSIVE_DISCOVERY,
+                        default=current_progressive_discovery,
                     ): bool,
                 }
             ),

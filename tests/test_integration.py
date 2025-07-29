@@ -20,7 +20,35 @@ class TestDysonLocalIntegration:
         hass = Mock(spec=HomeAssistant)
         hass.data = {DOMAIN: {DATA_DEVICES: {}, DATA_COORDINATORS: {}}}
         hass.async_create_task = AsyncMock()
-        hass.async_add_executor_job = AsyncMock(return_value=True)
+
+        # Mock async_add_executor_job to return a device when called with progressive discovery
+        async def mock_executor_job(func, *args, **kwargs):
+            if (
+                hasattr(func, "__name__")
+                and func.__name__ == "get_device_with_progressive_discovery"
+            ):
+                # Extract serial and device_type from kwargs for clarity and robustness
+                serial = kwargs.get("serial")
+                device_type = kwargs.get("device_type")
+
+                # Return a mock device for progressive discovery calls
+                device = Mock()
+                device.serial = serial
+                device.device_type = device_type
+                device.name = "Test Dyson Device"
+                device.version = "1.0.0"
+                device.battery_level = 85
+                device.is_connected = False
+                device.connect = Mock()
+                device.disconnect = Mock()
+                device.add_message_listener = Mock()
+                device.remove_message_listener = Mock()
+                device._callbacks = []
+                return device
+            return True  # Default return for other functions
+
+        hass.async_add_executor_job = AsyncMock(side_effect=mock_executor_job)
+
         hass.config_entries = Mock()
         hass.config_entries.async_forward_entry_setups = AsyncMock(return_value=True)
         hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
@@ -120,7 +148,7 @@ class TestDysonLocalIntegration:
         mock_hass.async_add_executor_job = execute_for_failure
 
         with patch(
-            "custom_components.dyson_local.device_manager.get_device",
+            "custom_components.dyson_local.vendor.libdyson.get_device_with_progressive_discovery",
             return_value=mock_device,
         ):
             with patch(

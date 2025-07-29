@@ -30,6 +30,7 @@ class DynamicDeviceFactory:
         device_type: str,
         status_data: Optional[Dict[str, Any]] = None,
         environmental_data: Optional[Dict[str, Any]] = None,
+        progressive_mode: bool = False,
     ) -> Optional[DysonDevice]:
         """
         Create a device instance based on discovered capabilities.
@@ -40,16 +41,30 @@ class DynamicDeviceFactory:
             device_type: Device type code (for fallback/logging)
             status_data: Current device status data
             environmental_data: Current environmental sensor data
+            progressive_mode: True if running in progressive discovery mode
 
         Returns:
             Appropriate device instance or None if creation fails
         """
 
+        # For modern devices without MQTT data, default to progressive mode behavior
+        if (
+            not status_data
+            and not environmental_data
+            and device_type in ["438M", "438E", "438K"]
+        ):
+            progressive_mode = True
+
         # If we don't have data to analyze, fall back to static mapping
         if not status_data and not environmental_data:
-            _LOGGER.warning(
-                f"No data available for capability discovery of device {serial}, using static mapping"
-            )
+            if progressive_mode:
+                _LOGGER.debug(
+                    f"Progressive discovery: Creating device {serial} without MQTT data, will enhance capabilities as data arrives"
+                )
+            else:
+                _LOGGER.warning(
+                    f"No data available for capability discovery of device {serial}, using static mapping"
+                )
             return self._fallback_to_static_mapping(serial, credential, device_type)
 
         # Discover capabilities
@@ -234,6 +249,7 @@ def get_device_with_capability_discovery(
     device_type: str,
     status_data: Optional[Dict[str, Any]] = None,
     environmental_data: Optional[Dict[str, Any]] = None,
+    progressive_mode: bool = False,
 ) -> Optional[DysonDevice]:
     """
     Create a Dyson device using capability discovery.
@@ -247,10 +263,16 @@ def get_device_with_capability_discovery(
         device_type: Device type code
         status_data: Current device status data
         environmental_data: Current environmental sensor data
+        progressive_mode: True if running in progressive discovery mode
 
     Returns:
         Appropriate device instance based on discovered capabilities
     """
     return dynamic_factory.create_device_from_capabilities(
-        serial, credential, device_type, status_data, environmental_data
+        serial,
+        credential,
+        device_type,
+        status_data,
+        environmental_data,
+        progressive_mode,
     )
