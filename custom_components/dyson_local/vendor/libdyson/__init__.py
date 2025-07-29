@@ -233,6 +233,15 @@ def get_device_with_progressive_discovery(
                 # Store the discovery manager on the device for later cleanup
                 device._progressive_discovery_manager = discovery_manager
 
+                # Start progressive discovery monitoring (will be scheduled)
+                import asyncio
+
+                if hasattr(hass, "async_create_task"):
+                    hass.async_create_task(discovery_manager.start_monitoring())
+                else:
+                    # Fallback for testing or unusual environments
+                    asyncio.create_task(discovery_manager.start_monitoring())
+
                 return device
         except Exception as e:
             _LOGGER.warning(
