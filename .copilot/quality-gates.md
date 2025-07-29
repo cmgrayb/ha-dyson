@@ -34,6 +34,16 @@ class_size:
 - **black**: Must be formatted
 - **isort**: Imports must be sorted
 
+**Testing Approach**: Use terminal commands directly instead of VSCode tasks:
+
+```bash
+flake8 custom_components/dyson_local/
+mypy custom_components/dyson_local/
+bandit -r custom_components/dyson_local/
+black --check custom_components/dyson_local/
+isort --check-only custom_components/dyson_local/
+```
+
 ### Home Assistant Specific Patterns
 
 - **Property Overrides**: Use `_attr_` pattern when possible

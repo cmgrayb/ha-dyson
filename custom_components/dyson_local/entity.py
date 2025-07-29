@@ -202,7 +202,7 @@ class DysonEntity(Entity):
         """Return device info of the entity."""
         return {
             "identifiers": {(DOMAIN, self._device.serial)},
-            "name": getattr(self._device, "name", self._name),
+            "name": self._name,
             "manufacturer": "Dyson",
             "model": self._device.device_type,
         }

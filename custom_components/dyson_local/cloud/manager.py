@@ -30,6 +30,13 @@ async def async_setup_account(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.debug("Calling account.devices() to get device list")
         devices = await hass.async_add_executor_job(account.devices)
         _LOGGER.debug("Retrieved %d devices from cloud", len(devices))
+
+        # Validate OpenDyson MQTT setup for debugging
+        from ..opendyson_integration import validate_opendyson_mqtt_setup
+
+        validation_summary = validate_opendyson_mqtt_setup(devices)
+        _LOGGER.debug("MQTT validation summary: %s", validation_summary)
+
     except DysonNetworkError:
         _LOGGER.error("Cannot connect to Dyson cloud service.")
         raise ConfigEntryNotReady

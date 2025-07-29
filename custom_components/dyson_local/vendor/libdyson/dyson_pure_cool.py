@@ -1,6 +1,7 @@
 """Dyson Pure Cool fan."""
 
 from abc import abstractmethod
+import logging
 from typing import Optional
 
 from .dyson_device import DysonFanDevice
@@ -146,6 +147,12 @@ class DysonPureCool(DysonPureCoolBase):
         angle_high: Optional[int] = None,
     ) -> None:
         """Turn on oscillation."""
+        _LOGGER.debug(
+            "enable_oscillation() called for device %s with angles %s, %s",
+            self.serial,
+            angle_low,
+            angle_high,
+        )
         if angle_low is None:
             angle_low = self.oscillation_angle_low
         if angle_high is None:
@@ -165,6 +172,13 @@ class DysonPureCool(DysonPureCoolBase):
             oson = "OION"
         else:
             oson = "ON"
+        _LOGGER.debug(
+            "Setting oscillation config for device %s: oson=%s, angle_low=%s, angle_high=%s",
+            self.serial,
+            oson,
+            angle_low,
+            angle_high,
+        )
         self._set_configuration(
             oson=oson,
             fpwr="ON",

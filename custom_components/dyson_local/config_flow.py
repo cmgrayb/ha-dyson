@@ -11,7 +11,6 @@ from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import CONF_EMAIL, CONF_HOST, CONF_NAME, CONF_PASSWORD
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 
 from .cloud.const import CONF_AUTH, CONF_REGION
@@ -157,7 +156,7 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_cloud(
         self, info: Optional[dict[str, Any]] = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         if info is not None:
             self._region = info[CONF_REGION]
             if self._region == "CN":
@@ -172,7 +171,7 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_email(
         self, info: Optional[dict[str, Any]] = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         errors = {}
         if info is not None:
             email = info[CONF_EMAIL]
@@ -211,7 +210,7 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_email_otp(
         self, info: Optional[dict[str, Any]] = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         errors = {}
         if info is not None:
             try:
@@ -250,7 +249,7 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_mobile(
         self, info: Optional[dict[str, Any]] = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         errors = {}
         if info is not None:
             account = DysonAccountCN()
@@ -280,7 +279,7 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_mobile_otp(
         self, info: Optional[dict[str, Any]] = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         errors = {}
         if info is not None:
             try:
@@ -318,7 +317,7 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_manual(
         self, info: Optional[dict[str, Any]] = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle step to setup manually."""
         errors = {}
         if info is not None:
@@ -371,7 +370,7 @@ class DysonLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_host(
         self, info: Optional[dict[str, Any]] = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle step to set host."""
         errors = {}
         if info is not None:

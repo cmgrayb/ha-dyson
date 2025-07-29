@@ -33,6 +33,15 @@ Current compliance status and assessment report, including:
 - Remaining issues
 - Next steps
 
+### [`testing-guidelines.md`](./testing-guidelines.md)
+
+Comprehensive testing guidelines and procedures:
+
+- Terminal command requirements (no VSCode tasks)
+- Quality check commands
+- Pre-commit checklist
+- Testing best practices
+
 ### [`quality-gates.md`](./quality-gates.md)
 
 Quality gates configuration and thresholds:
@@ -53,14 +62,22 @@ This directory ensures the codebase maintains high quality standards and follows
 
 ## 🔍 Quick Compliance Check
 
-To verify current compliance status:
+To verify current compliance status, **use terminal commands directly** (do not use VSCode tasks):
 
 ```bash
-# Run quality checks
+# Run quality checks using terminal commands only
 flake8 custom_components/dyson_local/
 black --check custom_components/dyson_local/
 isort --check-only custom_components/dyson_local/
 mypy custom_components/dyson_local/
+bandit -r custom_components/dyson_local/
+
+# For formatting (when needed)
+black custom_components/dyson_local/
+isort custom_components/dyson_local/
+
+# Run tests
+pytest tests/ -v
 
 # Check for specific patterns
 grep -r "# type: ignore\[override\]" custom_components/dyson_local/  # Should find strategic overrides
@@ -73,6 +90,8 @@ find custom_components/dyson_local/ -name "*.py" -exec wc -l {} + | sort -n
 # Run Home Assistant validation
 hass --script check_config --config ./config
 ```
+
+**Important**: Always use terminal commands directly rather than VSCode tasks for testing and quality checks, as VSCode task outputs are not accessible for validation.
 
 ## 🎯 Quality Patterns Summary
 

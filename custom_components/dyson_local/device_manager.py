@@ -120,6 +120,9 @@ class DysonDeviceManager:
 
     async def _prepare_device(self, entry: ConfigEntry) -> DysonDevice:
         """Prepare and disconnect device before setup."""
+        # Note: This uses the standard device creation approach.
+        # For cloud-discovered devices, the OpenDyson approach is used in config_flow.py
+        # where DysonDeviceInfo is available to determine the optimal MQTT topic.
         device = get_device(
             entry.data[CONF_SERIAL],
             entry.data[CONF_CREDENTIAL],
