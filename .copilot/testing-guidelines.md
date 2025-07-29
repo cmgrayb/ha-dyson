@@ -8,6 +8,14 @@ This document provides specific guidelines for testing the Dyson Home Assistant 
 
 **Always use terminal commands directly instead of VSCode tasks** for testing and quality checks. VSCode task outputs are not accessible for validation.
 
+**🚫 CRITICAL: AI Assistant Instructions**
+
+- **NEVER use run_vs_code_task tool** - This breaks the workflow and causes frustration
+- **NEVER attempt to run VSCode tasks** - Always use run_in_terminal with the actual commands
+- **ALWAYS use terminal commands** - These provide accessible, verifiable output
+- When a user mentions VSCode tasks, translate them to equivalent terminal commands
+- Example: Instead of "Run Black (Format)" task, use `black custom_components/dyson_local/`
+
 ### 🚀 Quick Start: Pre-Push Preparation
 
 For convenience, there's a VSCode task that runs the complete pre-push sequence:

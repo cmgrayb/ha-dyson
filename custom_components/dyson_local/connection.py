@@ -32,7 +32,7 @@ class DysonConnectionHandler:
         device: DysonDevice,
         coordinator: Optional[DataUpdateCoordinator],
     ) -> bool:
-        """Connect device with static host."""
+        """Connect device with static host, fallback to discovery if host unreachable."""
 
         def setup_entry(host: str, is_discovery: bool = False) -> bool:
             """Set up entry with given host."""
@@ -57,12 +57,47 @@ class DysonConnectionHandler:
                     "Successfully connected to device %s at %s", device.serial, host
                 )
 
-                # Cache the IP address for this device
-                if is_discovery and host:
+                # Request immediate status update (step 4 of desired flow)
+                try:
+                    _LOGGER.debug(
+                        "Requesting immediate status for device %s", device.serial
+                    )
+                    device.request_current_status()
+                    _LOGGER.debug(
+                        "Successfully requested current state for device %s",
+                        device.serial,
+                    )
+
+                    # Also request environmental data like the mobile app does
+                    if hasattr(device, "request_environmental_data"):
+                        device.request_environmental_data()
+                        _LOGGER.debug(
+                            "Successfully requested environmental data for device %s",
+                            device.serial,
+                        )
+
+                except Exception as e:
+                    _LOGGER.warning(
+                        "Failed to request immediate status for device %s: %s",
+                        device.serial,
+                        e,
+                    )
+
+                # Cache the IP address for this device (update if different)
+                if host:
                     if "device_ips" not in self.hass.data[DOMAIN]:
                         self.hass.data[DOMAIN]["device_ips"] = {}
-                    self.hass.data[DOMAIN]["device_ips"][device.serial] = host
-                    _LOGGER.debug("Cached IP %s for device %s", host, device.serial)
+                    old_ip = self.hass.data[DOMAIN]["device_ips"].get(device.serial)
+                    if old_ip != host:
+                        self.hass.data[DOMAIN]["device_ips"][device.serial] = host
+                        _LOGGER.debug(
+                            "Updated cached IP %s for device %s (was %s)",
+                            host,
+                            device.serial,
+                            old_ip,
+                        )
+                    else:
+                        _LOGGER.debug("Cached IP %s for device %s", host, device.serial)
 
             except DysonException as e:
                 if is_discovery:
@@ -96,14 +131,35 @@ class DysonConnectionHandler:
             _LOGGER.debug(
                 "Setting up device %s with static host: %s", device.serial, host
             )
-            result = await self.hass.async_add_executor_job(
-                partial(setup_entry, host, is_discovery=False)
-            )
-            if not result:
-                _LOGGER.error(
-                    "Failed to set up device %s with static host", device.serial
+            try:
+                result = await self.hass.async_add_executor_job(
+                    partial(setup_entry, host, is_discovery=False)
                 )
-                raise ConfigEntryNotReady
+                if result:
+                    return True
+                else:
+                    _LOGGER.error(
+                        "Failed to set up device %s with static host", device.serial
+                    )
+                    raise ConfigEntryNotReady
+            except ConfigEntryNotReady:
+                # Static host failed, try Zeroconf discovery first, then cloud API as last resort
+                _LOGGER.warning(
+                    "Static host %s failed for device %s, attempting Zeroconf discovery",
+                    host,
+                    device.serial,
+                )
+                try:
+                    return await self._try_zeroconf_discovery(
+                        entry, device, coordinator
+                    )
+                except Exception as e:
+                    _LOGGER.warning(
+                        "Zeroconf discovery failed for device %s: %s, trying cloud API query",
+                        device.serial,
+                        e,
+                    )
+                    return await self._try_cloud_api_refresh(entry, device, coordinator)
 
         return True
 
@@ -236,3 +292,166 @@ class DysonConnectionHandler:
                 pass
 
             return False
+
+    async def _try_zeroconf_discovery(
+        self,
+        entry: ConfigEntry,
+        device: DysonDevice,
+        coordinator: Optional[DataUpdateCoordinator],
+    ) -> bool:
+        """Try to find device using Zeroconf/mDNS discovery."""
+        from .discovery_manager import DysonDiscoveryManager
+
+        _LOGGER.debug("Attempting Zeroconf discovery for device %s", device.serial)
+
+        discovery_manager = DysonDiscoveryManager(self.hass)
+        return await discovery_manager.connect_with_discovery(
+            entry, device, coordinator, self
+        )
+
+    async def _try_cloud_api_refresh(
+        self,
+        entry: ConfigEntry,
+        device: DysonDevice,
+        coordinator: Optional[DataUpdateCoordinator],
+    ) -> bool:
+        """Try to get new IP from cloud API and reconnect."""
+        from .cloud.const import CONF_AUTH, CONF_REGION
+        from .vendor.libdyson.cloud import DysonAccount, DysonAccountCN
+        from .vendor.libdyson.exceptions import DysonInvalidAuth, DysonNetworkError
+
+        _LOGGER.debug("Attempting cloud API refresh for device %s", device.serial)
+
+        # Find the cloud account entry for this device
+        cloud_entry = None
+        for config_entry in self.hass.config_entries.async_entries(DOMAIN):
+            if CONF_AUTH in config_entry.data:
+                # Check if this cloud account has our device
+                if config_entry.entry_id in self.hass.data.get(DOMAIN, {}):
+                    account_data = self.hass.data[DOMAIN][config_entry.entry_id]
+                    devices = account_data.get("devices", [])
+                    if any(d.serial == device.serial for d in devices):
+                        cloud_entry = config_entry
+                        break
+
+        if not cloud_entry:
+            _LOGGER.warning(
+                "No cloud account found for device %s, cannot refresh IP", device.serial
+            )
+            raise ConfigEntryNotReady("No cloud account available for IP refresh")
+
+        try:
+            # Get account instance
+            region = cloud_entry.data[CONF_REGION]
+            auth_info = cloud_entry.data[CONF_AUTH]
+
+            if region == "CN":
+                account = DysonAccountCN(auth_info)
+            else:
+                account = DysonAccount(auth_info)
+
+            # Refresh devices from cloud
+            devices = await self.hass.async_add_executor_job(account.devices)
+
+            # Find our device in the refreshed list
+            device_info = None
+            for d in devices:
+                if d.serial == device.serial:
+                    device_info = d
+                    break
+
+            if not device_info:
+                _LOGGER.error("Device %s not found in cloud account", device.serial)
+                raise ConfigEntryNotReady("Device not found in cloud account")
+
+            # Check if device has IP information
+            if not hasattr(device_info, "ip") or not device_info.ip:
+                _LOGGER.warning(
+                    "Device %s has no IP information in cloud data", device.serial
+                )
+                raise ConfigEntryNotReady("No IP information available from cloud")
+
+            new_ip = device_info.ip
+            _LOGGER.info(
+                "Cloud API provided new IP %s for device %s", new_ip, device.serial
+            )
+
+            # Update config entry with new IP
+            new_data = {**entry.data}
+            new_data[CONF_HOST] = new_ip
+            self.hass.config_entries.async_update_entry(entry, data=new_data)
+
+            # Try connecting with new IP
+            return await self.hass.async_add_executor_job(
+                partial(self._setup_entry_with_host, new_ip, device, coordinator, entry)
+            )
+
+        except (DysonNetworkError, DysonInvalidAuth) as e:
+            _LOGGER.error("Cloud API failed for device %s: %s", device.serial, e)
+            raise ConfigEntryNotReady("Cloud API authentication failed") from e
+        except Exception as e:
+            _LOGGER.error(
+                "Unexpected error during cloud API refresh for device %s: %s",
+                device.serial,
+                e,
+            )
+            raise ConfigEntryNotReady("Cloud API refresh failed") from e
+
+    def _setup_entry_with_host(
+        self,
+        host: str,
+        device: DysonDevice,
+        coordinator: Optional[DataUpdateCoordinator],
+        entry: ConfigEntry,
+    ) -> bool:
+        """Set up entry with a specific host (used by cloud API refresh)."""
+        _LOGGER.debug(
+            "Setting up device %s with refreshed host %s", device.serial, host
+        )
+
+        try:
+            if hasattr(device, "is_connected") and device.is_connected:
+                device.disconnect()
+        except Exception as e:
+            _LOGGER.debug("Error disconnecting device %s: %s", device.serial, e)
+
+        try:
+            device.connect(host)
+            _LOGGER.debug(
+                "Successfully connected to device %s at %s", device.serial, host
+            )
+
+            # Request immediate status
+            try:
+                device.request_current_status()
+                if hasattr(device, "request_environmental_data"):
+                    device.request_environmental_data()
+                _LOGGER.debug(
+                    "Successfully requested status for device %s", device.serial
+                )
+            except Exception as e:
+                _LOGGER.warning(
+                    "Failed to request status for device %s: %s", device.serial, e
+                )
+
+            # Cache the new IP
+            if "device_ips" not in self.hass.data[DOMAIN]:
+                self.hass.data[DOMAIN]["device_ips"] = {}
+            self.hass.data[DOMAIN]["device_ips"][device.serial] = host
+            _LOGGER.debug("Cached new IP %s for device %s", host, device.serial)
+
+            # Store device data
+            self.hass.data[DOMAIN][DATA_DEVICES][entry.entry_id] = device
+            self.hass.data[DOMAIN][DATA_COORDINATORS][entry.entry_id] = coordinator
+
+            # Set up platforms
+            return self._setup_platforms(entry, device, is_discovery=False)
+
+        except DysonException as e:
+            _LOGGER.error(
+                "Failed to connect to device %s at refreshed host %s: %s",
+                device.serial,
+                host,
+                e,
+            )
+            raise ConfigEntryNotReady from e
