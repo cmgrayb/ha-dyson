@@ -20,12 +20,14 @@ from .const import (
     CONF_CREDENTIAL,
     CONF_DEVICE_TYPE,
     CONF_ENABLE_POLLING,
+    CONF_PROGRESSIVE_DISCOVERY,
     CONF_SERIAL,
     DATA_COORDINATORS,
     DATA_DEVICES,
     DEFAULT_AUTO_DISCOVERY,
     DEFAULT_CLOUD_POLL_INTERVAL,
     DEFAULT_ENABLE_POLLING,
+    DEFAULT_PROGRESSIVE_DISCOVERY,
     DOMAIN,
 )
 from .discovery_manager import DysonDiscoveryManager
@@ -49,7 +51,18 @@ class DysonDeviceManager:
 
     async def async_setup_entry(self, entry: ConfigEntry) -> bool:
         """Set up device from config entry."""
-        device = await self._prepare_device(entry)
+        # Check if progressive discovery is enabled
+        progressive_discovery_enabled = entry.options.get(
+            CONF_PROGRESSIVE_DISCOVERY, DEFAULT_PROGRESSIVE_DISCOVERY
+        )
+
+        if progressive_discovery_enabled:
+            _LOGGER.debug("Using progressive discovery for entry %s", entry.entry_id)
+            device = await self._prepare_device_with_progressive_discovery(entry)
+        else:
+            _LOGGER.debug("Using standard device creation for entry %s", entry.entry_id)
+            device = await self._prepare_device(entry)
+
         coordinator = await self._setup_coordinator(device, entry)
 
         # Set up cloud polling coordinator if this is a cloud-managed device and auto-discovery is enabled
@@ -133,6 +146,51 @@ class DysonDeviceManager:
             raise ValueError(
                 f"Failed to create device for serial {entry.data[CONF_SERIAL]} "
                 f"with device type {entry.data[CONF_DEVICE_TYPE]}"
+            )
+
+        # Ensure device is disconnected before attempting to connect
+        try:
+            await self.hass.async_add_executor_job(device.disconnect)
+            _LOGGER.debug("Disconnected device %s before setup", device.serial)
+            await asyncio.sleep(0.2)
+        except Exception as e:
+            _LOGGER.debug(
+                "Device %s was not connected during setup (expected): %s",
+                device.serial,
+                e,
+            )
+
+        return device
+
+    async def _prepare_device_with_progressive_discovery(
+        self, entry: ConfigEntry
+    ) -> DysonDevice:
+        """Create device with progressive discovery enabled."""
+        from .vendor.libdyson import get_device_with_progressive_discovery
+
+        device = await self.hass.async_add_executor_job(
+            get_device_with_progressive_discovery,
+            entry.data[CONF_SERIAL],
+            entry.data[CONF_CREDENTIAL],
+            entry.data[CONF_DEVICE_TYPE],
+            self.hass,  # Pass Home Assistant instance
+            entry,  # Pass config entry
+        )
+
+        if device is None:
+            raise ValueError(
+                f"Failed to create device for serial {entry.data[CONF_SERIAL]} "
+                f"with device type {entry.data[CONF_DEVICE_TYPE]}"
+            )
+
+        # Validate that device has required attributes
+        if not hasattr(device, "disconnect") or not hasattr(device, "serial"):
+            _LOGGER.error(
+                "Device creation returned invalid object without required attributes: %s",
+                type(device),
+            )
+            raise ValueError(
+                f"Invalid device created for serial {entry.data[CONF_SERIAL]}"
             )
 
         # Ensure device is disconnected before attempting to connect
