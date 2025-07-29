@@ -1,6 +1,5 @@
 """Progressive discovery manager for Dyson devices."""
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
@@ -87,7 +86,7 @@ class ProgressiveDiscoveryManager:
             self._message_listener_added = False
             self._logger.debug("Removed MQTT message listener")
 
-    def cleanup(self) -> None:
+    async def cleanup(self) -> None:
         """Clean up resources."""
         self._logger.debug(
             "Cleaning up progressive discovery manager for device %s",
@@ -97,6 +96,7 @@ class ProgressiveDiscoveryManager:
         # Ensure monitoring is stopped
         if self._monitoring:
             await self.stop_monitoring()
+
     async def _on_mqtt_message(self, message: Dict[str, Any]) -> None:
         """Handle incoming MQTT messages for capability discovery."""
         if not self._monitoring:
