@@ -51,10 +51,11 @@ from .utils import get_mqtt_info_from_wifi_info  # noqa: F401
 def get_device(serial: str, credential: str, device_type: str) -> Optional[DysonDevice]:
     """Get a new DysonDevice instance."""
     import logging
+
     _LOGGER = logging.getLogger(__name__)
-    
+
     _LOGGER.debug("Creating device: serial=%s, device_type=%s", serial, device_type)
-    
+
     if device_type == DEVICE_TYPE_360_EYE:
         _LOGGER.debug("Creating Dyson360Eye device")
         return Dyson360Eye(serial, credential)
@@ -102,7 +103,6 @@ def get_device(serial: str, credential: str, device_type: str) -> Optional[Dyson
     }:
         _LOGGER.debug("Creating DysonBigQuiet device")
         return DysonBigQuiet(serial, credential, device_type)
-    
+
     _LOGGER.warning("Unknown device type: %s for serial: %s", device_type, serial)
     return None
-

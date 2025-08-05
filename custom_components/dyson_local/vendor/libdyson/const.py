@@ -1,4 +1,5 @@
 """Constants for Dyson Python library."""
+
 from enum import Enum, auto
 
 DEVICE_TYPE_360_EYE = "N223"
@@ -15,7 +16,9 @@ DEVICE_TYPE_PURE_HUMIDIFY_COOL = "358"  # PH01, PH02, PH03, PH04 - all variants 
 DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K = "358K"  # Deprecated: use DEVICE_TYPE_PURE_HUMIDIFY_COOL instead (kept for MQTT topic compatibility)
 DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_E = "358E"  # Deprecated: use DEVICE_TYPE_PURE_HUMIDIFY_COOL instead (kept for MQTT topic compatibility)
 DEVICE_TYPE_PURE_HOT_COOL_LINK = "455"  # HP02
-DEVICE_TYPE_PURE_HOT_COOL = "527"  # HP04, HP07, HP09 - all variants merged, use same DysonPureHotCool class
+DEVICE_TYPE_PURE_HOT_COOL = (
+    "527"  # HP04, HP07, HP09 - all variants merged, use same DysonPureHotCool class
+)
 DEVICE_TYPE_PURIFIER_HOT_COOL_E = "527E"  # Deprecated: use DEVICE_TYPE_PURE_HOT_COOL instead (kept for MQTT topic compatibility)
 DEVICE_TYPE_PURIFIER_HOT_COOL_K = "527K"  # Deprecated: use DEVICE_TYPE_PURE_HOT_COOL instead (kept for MQTT topic compatibility)
 DEVICE_TYPE_PURIFIER_HOT_COOL_M = "527M"  # Deprecated: use DEVICE_TYPE_PURE_HOT_COOL instead (kept for MQTT topic compatibility)
@@ -39,7 +42,7 @@ DEVICE_TYPE_NAMES = {
     DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_K: "Purifier Humidify+Cool K Series (Deprecated - use Pure Humidify+Cool)",
     DEVICE_TYPE_PURIFIER_HUMIDIFY_COOL_E: "Purifier Humidify+Cool E Series (Deprecated - use Pure Humidify+Cool)",
     DEVICE_TYPE_PURIFIER_HOT_COOL_K: "Purifier Hot+Cool K Series (Deprecated - use Pure Hot+Cool)",
-    DEVICE_TYPE_PURIFIER_BIG_QUIET: "Purifier Big+Quiet Series"
+    DEVICE_TYPE_PURIFIER_BIG_QUIET: "Purifier Big+Quiet Series",
 }
 
 ENVIRONMENTAL_OFF = -1

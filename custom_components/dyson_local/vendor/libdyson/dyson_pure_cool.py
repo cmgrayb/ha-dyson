@@ -58,12 +58,18 @@ class DysonPureCoolBase(DysonFanDevice):
     @property
     def particulate_matter_2_5(self):
         """Return PM 2.5 in micro grams per cubic meter."""
-        return int(self._get_environmental_field_value("p25r") or self._get_environmental_field_value("pm25"))
+        return int(
+            self._get_environmental_field_value("p25r")
+            or self._get_environmental_field_value("pm25")
+        )
 
     @property
     def particulate_matter_10(self):
         """Return PM 2.5 in micro grams per cubic meter."""
-        return int(self._get_environmental_field_value("p10r") or self._get_environmental_field_value("pm10"))
+        return int(
+            self._get_environmental_field_value("p10r")
+            or self._get_environmental_field_value("pm10")
+        )
 
     @property
     def volatile_organic_compounds(self) -> float:
@@ -145,7 +151,12 @@ class DysonPureCool(DysonPureCoolBase):
         angle_high: Optional[int] = None,
     ) -> None:
         """Turn on oscillation."""
-        _LOGGER.debug("enable_oscillation() called for device %s with angles %s, %s", self.serial, angle_low, angle_high)
+        _LOGGER.debug(
+            "enable_oscillation() called for device %s with angles %s, %s",
+            self.serial,
+            angle_low,
+            angle_high,
+        )
         if angle_low is None:
             angle_low = self.oscillation_angle_low
         if angle_high is None:
@@ -165,7 +176,13 @@ class DysonPureCool(DysonPureCoolBase):
             oson = "OION"
         else:
             oson = "ON"
-        _LOGGER.debug("Setting oscillation config for device %s: oson=%s, angle_low=%s, angle_high=%s", self.serial, oson, angle_low, angle_high)
+        _LOGGER.debug(
+            "Setting oscillation config for device %s: oson=%s, angle_low=%s, angle_high=%s",
+            self.serial,
+            oson,
+            angle_low,
+            angle_high,
+        )
         self._set_configuration(
             oson=oson,
             fpwr="ON",

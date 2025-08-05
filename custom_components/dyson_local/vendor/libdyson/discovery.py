@@ -60,7 +60,7 @@ class DysonDiscovery:
         """Stop discovery."""
         if self._browser is None:
             return
-            
+
         try:
             # Cancel the browser first
             self._browser.cancel()
@@ -71,17 +71,17 @@ class DysonDiscovery:
         except Exception as e:
             # Log any other exceptions but don't fail
             print(f"Error cancelling discovery browser: {e}")
-        
+
         try:
             # Close zeroconf instance
-            if hasattr(self._browser, 'zc') and self._browser.zc:
+            if hasattr(self._browser, "zc") and self._browser.zc:
                 self._browser.zc.close()
         except Exception as e:
             print(f"Error closing zeroconf: {e}")
-        
+
         # Clear references
         self._browser = None
-        
+
         # Clear discovery state
         with self._lock:
             self._registered.clear()

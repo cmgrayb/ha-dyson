@@ -99,4 +99,3 @@ class DysonPurifierHumidifyCool(DysonPureCoolBase):
     def set_water_hardness(self, water_hardness: WaterHardness) -> None:
         """Set water hardness."""
         self._set_configuration(wath=WATER_HARDNESS_ENUM_TO_STR[water_hardness])
-
